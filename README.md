@@ -21,7 +21,7 @@ Description of the current project terminology. Writing documentation one should
 
 Here we are listing each type of the `bot` with brief description. Each bot has `-bot` suffix in its name. The source of each bot stored at `src/bot/${bot-name}` directory and has its own `README.md` documentation file
 
-`refiner-bot` - takes any `.md` file as an input and outputs with refined version of the file
+`refiner-bot` - takes any `.md` file path as an input and outputs with refined version of the file
 `clarity-bot` - takes `app-memo` as an input and outputs with refined version
 
 # Project file structure
@@ -46,8 +46,9 @@ Directory where newly generated code is scoped by the `app-name` (the dir is in 
 
 ## `src`
 
-Directory where source code of the `bots` is stored alongside with `bot-cli` implementation
+The directory where source code of the `bots` is stored alongside with `bot-cli` implementation
 
-`src/bots/${bot-name}` - a `bot` source
-`src/bots/${bot-name}/index.ts` - the `bot` source code entrypoint
-`src/cli` - a cli source code
+`src/types.ts` - the project domain specific types
+`src/bots/${bot-name}` - a `bot` source directory
+`src/cli` - the directory cli source code
+`src/AI` - the directory where artificial intelligence API adapter
