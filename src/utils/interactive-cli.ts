@@ -25,29 +25,36 @@ export async function getUserPrompt(message: string) {
 }
 
 export async function conversation(
-  processResponse: (chatHistory: I.GPTMessage[]) => Promise<string /* answer */>,
+  processAIRequest: (chatHistory: I.GPTMessage[]) => Promise<{
+    makeResponseWriter: (writer: (data: string) => void) => Promise<string>
+  }>,
   chatHistory: I.GPTMessage[] = []
-) {
+): Promise<void> {
+  const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
+
   if (chatHistory.length === 0) {
+    console.log('')
     clackPrompt.intro('Starting new conversation')
-    chatHistory.push({ role: 'user', content: await getUserPrompt(`${cliColor.cyan('You:')}`) })
+    chatHistory.push({ role: 'user', content: await getPromptFromYou() })
   }
 
   const spin = clackPrompt.spinner()
 
   spin.start('THINKING...')
 
-  const responseMessage = await processResponse(chatHistory)
+  const { makeResponseWriter } = await processAIRequest(chatHistory)
 
   spin.stop(`${cliColor.green('AI:')}`)
 
-  console.log(`\n${responseMessage}\n`)
+  console.log('')
+  const responseMessage = await makeResponseWriter(process.stdout.write.bind(process.stdout))
+  console.log('\n')
 
   chatHistory.push({ role: 'assistant', content: responseMessage })
 
-  const userPrompt = await getUserPrompt(`${cliColor.cyan('You:')}`)
+  const userPrompt = await getPromptFromYou()
 
   chatHistory.push({ role: 'user', content: userPrompt })
 
-  return conversation(processResponse, chatHistory)
+  return conversation(processAIRequest, chatHistory)
 }

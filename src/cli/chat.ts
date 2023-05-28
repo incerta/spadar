@@ -1,12 +1,12 @@
 import { command } from 'cleye'
 
-import { chat } from '../AI'
+import { generateAIResponseStream } from '../AI'
 import { conversation } from '../utils/interactive-cli'
 
 import * as I from '../types'
 
 const startConversation = (chatHistory?: I.GPTMessage[]) =>
-  conversation((chatHistory) => chat({ messages: chatHistory }), chatHistory)
+  conversation((chatHistory) => generateAIResponseStream({ messages: chatHistory }), chatHistory)
 
 export default command(
   {
