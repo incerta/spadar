@@ -1,6 +1,10 @@
+export type GPTMessage = {
+  role: 'system' | 'assistant' | 'user'
+  content: string
+}
+
 export type AIRequest = {
-  imperative: string
-  messages: string[]
+  messages: GPTMessage[]
   /* What sampling temperature to use, between 0 and 2. 
     Higher values like 0.8 will make the output more random,
     while lower values like 0.2 will make it more focused and
