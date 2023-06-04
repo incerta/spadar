@@ -1,67 +1,56 @@
 import { IncomingMessage } from 'http'
 
-export async function* streamToIterable(stream: IncomingMessage) {
-  let previous = ''
-  for await (const chunk of stream) {
-    const bufferChunk = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
-    previous += bufferChunk
-    let eolIndex
-    while ((eolIndex = previous.indexOf('\n')) >= 0) {
-      // line includes the EOL
-      const line = previous.slice(0, eolIndex + 1).trimEnd()
-      if (line.startsWith('data: ')) yield line
-      previous = previous.slice(eolIndex + 1)
+export type DistinctMessage = {
+  field: 'event' | 'data' | 'id' | 'retry'
+  value: string
+}
+
+/* As per the event stream format detailed here:
+ * https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format,
+ * different messages are demarcated by the newline symbol '\n'. However, due to the streaming nature of the
+ * 'IncomingMessage', it does not assure the receipt of complete, discrete data units (i.e., a full line ending with '\n')
+ * in each data chunk of the stream. To manage this, we use a generator function. This function buffers incoming data chunks
+ * until a complete line is formed.
+ */
+export async function* incomingMessageToIterable(
+  stream: IncomingMessage
+): AsyncGenerator<DistinctMessage, void, undefined> {
+  let head = ''
+
+  for await (const chunk of stream as unknown as Iterable<Promise<unknown>>) {
+    const stringifiedChunk = ((): string => {
+      if (chunk instanceof Buffer) return chunk.toString()
+      if (typeof chunk === 'string') return chunk
+
+      throw Error('Unsupported stream chunk data type')
+    })()
+
+    for (let i = 0; i < stringifiedChunk.length; i++) {
+      const char = stringifiedChunk[i]
+      const isEndOfTheLine = char === '\n'
+
+      if (isEndOfTheLine === false) {
+        head += char
+        continue
+      }
+
+      if (head === '') {
+        continue
+      }
+
+      const completeLine = head
+
+      if (/^(data|event|id|retry): /.test(completeLine) === false) {
+        throw Error('Incorrect line beginning format, expected to pass /^(event|data|id|retry): / regexp test')
+      }
+
+      const colonIndex = completeLine.indexOf(':')
+      const field = completeLine.slice(0, colonIndex) as DistinctMessage['field']
+      const value = completeLine.slice(colonIndex + 2, completeLine.length)
+
+      yield { field, value }
+
+      head = ''
     }
   }
 }
-
-export const readStreamData =
-  (iterableStream: AsyncGenerator<string, void>, startSignal: (content: string) => boolean, excluded?: string) =>
-  (writer: (data: string) => void): Promise<string> =>
-    new Promise(async (resolve) => {
-      let data = ''
-      let content = ''
-      let dataStart = false
-
-      for await (const chunk of iterableStream) {
-        const payloads = chunk.toString().split('\n\n')
-
-        for (const payload of payloads) {
-          if (payload.includes('[DONE]')) {
-            dataStart = false
-            resolve(data)
-            return
-          }
-
-          if (payload.startsWith('data:')) {
-            content = parseContent(payload)
-            if (!dataStart && content.includes(excluded ?? '')) {
-              dataStart = startSignal(content)
-              if (excluded) break
-            }
-
-            if (dataStart && content) {
-              // FIXME: configure tsconfig to support String.prototype.replaceAll method
-              // @ts-ignore
-              const contentWithoutExcluded = excluded ? content.replaceAll(excluded, '') : content
-              data += contentWithoutExcluded
-              writer(contentWithoutExcluded)
-            }
-          }
-        }
-      }
-
-      function parseContent(payload: string): string {
-        // FIXME: configure tsconfig to support String.prototype.replaceAll method
-        // @ts-ignore
-        const data = payload.replaceAll(/(\n)?^data:\s*/g, '')
-        try {
-          const delta = JSON.parse(data.trim())
-          return delta.choices?.[0].delta?.content ?? ''
-        } catch (error) {
-          return `Error with JSON.parse and ${payload}.\n${error}`
-        }
-      }
-
-      resolve(data)
-    })
