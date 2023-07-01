@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest",
+    "test:watch": "jest --watch",
     "lint:fix": "prettier --write .",
     "lint": "prettier --check ."
   },
