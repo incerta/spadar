@@ -1,5 +1,6 @@
 import * as cliColor from 'kolorist'
 import * as clackPrompt from '@clack/prompts'
+import { parseImageGenerationRequest } from '../utils/image-generator'
 
 import * as I from '../types'
 
@@ -36,6 +37,19 @@ export async function conversation(
     console.log('')
     clackPrompt.intro('Starting new conversation')
     chatHistory.push({ role: 'user', content: await getPromptFromYou() })
+  }
+
+  const lastMessage = chatHistory[chatHistory.length - 1]
+  const imgGenReq = parseImageGenerationRequest(lastMessage.content)
+
+  if (imgGenReq !== null) {
+    // TODO: branch out for image generation logic
+    console.log('\nImage generation request detected!\n')
+    console.log('The feature is under construction, yet what we know about your request:')
+    console.log(JSON.stringify(imgGenReq))
+
+    const updatedChatHistory = chatHistory.slice(0, chatHistory.length - 2)
+    return conversation(processAIRequest, updatedChatHistory)
   }
 
   const spin = clackPrompt.spinner()

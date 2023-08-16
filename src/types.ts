@@ -14,3 +14,11 @@ export type AIRequest = {
   temperature?: number
   model?: 'gpt-3.5-turbo'
 }
+
+export type ImageGenerationRequest = {
+  size: {
+    width: number
+    height: number
+  }
+  prompt: string
+}
