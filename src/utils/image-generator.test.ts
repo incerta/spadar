@@ -6,26 +6,34 @@ describe('parseImageGenerationRequest fn', () => {
   it('Should return null if image generation pattern is not found', () => {
     expect(parseImageGenerationRequest('')).toBeNull()
     expect(parseImageGenerationRequest('[img')).toBeNull()
-    expect(parseImageGenerationRequest('[img:V00x600]')).toBeNull()
-    expect(parseImageGenerationRequest('[img:800x600]')).toBeInstanceOf(Object)
+
+    expect(parseImageGenerationRequest('[img:sm]')).toBeInstanceOf(Object)
+    expect(parseImageGenerationRequest('[img:md]')).toBeInstanceOf(Object)
+    expect(parseImageGenerationRequest('[img:lg]')).toBeInstanceOf(Object)
   })
 
   it('Should parse expected values', () => {
-    const expected: I.ImageGenerationRequest = {
-      size: {
-        width: 800,
-        height: 600,
-      },
-      prompt: 'blue sky and green field',
-    }
+    ;['sm', 'md', 'lg'].forEach((sizeLabel) => {
+      const prompt = 'blue sky and green field'
+      const message = `${prompt} [img:${sizeLabel}]`
 
-    const message = `blue sky and green field [img:800x600]`
-    const result = parseImageGenerationRequest(message) as DeepPartial<I.ImageGenerationRequest>
+      const result = parseImageGenerationRequest(message) as DeepPartial<I.ImageGenerationRequest>
 
-    if (result === null) expect(true).toBe(false)
+      if (result === null) expect(true).toBe(false)
 
-    expect(result.prompt).toBe(expected.prompt)
-    expect(result.size?.width).toBe(expected.size.width)
-    expect(result.size?.height).toBe(expected.size.height)
+      expect(result.prompt).toBe(prompt)
+
+      switch (sizeLabel) {
+        case 'sm':
+          expect(result.size).toBe('256x256')
+          break
+        case 'md':
+          expect(result.size).toBe('512x512')
+          break
+        case 'lg':
+          expect(result.size).toBe('256x256')
+          break
+      }
+    })
   })
 })
