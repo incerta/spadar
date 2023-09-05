@@ -25,7 +25,7 @@ export function parseImageGenerationRequest(source: string): null | I.ImageGener
       case 'md':
         return '512x512'
       case 'lg':
-        return '256x256'
+        return '1024x1024'
     }
 
     return DEFAULT_SIZE

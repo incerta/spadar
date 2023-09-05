@@ -29,10 +29,8 @@ export async function generateImage(req: I.ImageGenerationRequest) {
   const response = await openAI.createImage({
     prompt: req.prompt,
     n: 1,
-    // TODO: looks like the API is not reacting on `size` parameter change :(
     size: req.size,
   })
-
 
   const url = response.data.data[0].url
 
