@@ -25,6 +25,22 @@ export async function generateAIResponseStream({ messages, temperature, model }:
   return { makeResponseWriter }
 }
 
+export async function generateImage(req: I.ImageGenerationRequest) {
+  const response = await openAI.createImage({
+    prompt: req.prompt,
+    n: 1,
+    size: req.size,
+  })
+
+  const url = response.data.data[0].url
+
+  if (!url) {
+    throw new Error('Could not get generated image URL')
+  }
+
+  return url
+}
+
 function readAICompletionStream(iterableStream: ReturnType<typeof incomingMessageToIterable>) {
   return (writer: (messageToken: string) => void): Promise<string> =>
     new Promise(async (resolve) => {

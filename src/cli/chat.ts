@@ -1,12 +1,18 @@
 import { command } from 'cleye'
 
-import { generateAIResponseStream } from '../AI'
+import { generateAIResponseStream, generateImage } from '../AI'
 import { conversation } from '../utils/interactive-cli'
 
 import * as I from '../types'
 
-const startConversation = (chatHistory?: I.GPTMessage[]) =>
-  conversation((chatHistory) => generateAIResponseStream({ messages: chatHistory }), chatHistory)
+const startConversation = (initialChatHistory?: I.GPTMessage[]) =>
+  conversation(
+    {
+      processChatRequest: (chatHistory) => generateAIResponseStream({ messages: chatHistory }),
+      processImageRequest: (req: I.ImageGenerationRequest) => generateImage(req),
+    },
+    initialChatHistory
+  )
 
 export default command(
   {

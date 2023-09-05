@@ -1,5 +1,8 @@
 import * as cliColor from 'kolorist'
 import * as clackPrompt from '@clack/prompts'
+import { execSync } from 'child_process'
+
+import { parseImageGenerationRequest } from '../utils/image-generator'
 
 import * as I from '../types'
 
@@ -24,25 +27,63 @@ export async function getUserPrompt(message: string) {
   return (await group).prompt
 }
 
+// TODO: I guess mixing up image generation and chat ability
+// might not be a great ide, perhaps we could create some
+// intermediate crossover for `chatHistory` and route things to
+// `conversation` and ... on the second thought the way we did it
+// is kind of part of the conversation, let's finish the prototype
+// and decide then
 export async function conversation(
-  processAIRequest: (chatHistory: I.GPTMessage[]) => Promise<{
-    makeResponseWriter: (writer: (data: string) => void) => Promise<string>
-  }>,
-  chatHistory: I.GPTMessage[] = []
+  ai: {
+    processChatRequest: (chatHistory: I.GPTMessage[]) => Promise<{
+      makeResponseWriter: (writer: (data: string) => void) => Promise<string>
+    }>
+    processImageRequest: (req: I.ImageGenerationRequest) => Promise<string>
+  },
+  chatHistory: I.GPTMessage[] = [],
+  isContinueExistedConversation = false
 ): Promise<void> {
   const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
 
-  if (chatHistory.length === 0) {
+  if (chatHistory.length === 0 || isContinueExistedConversation) {
+    const conversationTitle = isContinueExistedConversation ? 'Conversation continued' : 'Starting new conversation'
+
     console.log('')
-    clackPrompt.intro('Starting new conversation')
+    clackPrompt.intro(conversationTitle)
     chatHistory.push({ role: 'user', content: await getPromptFromYou() })
   }
 
+  // TODO: we are trying to invent internal
+  // message code for some extra actions
+  // for now only supported thing is
+  // [img:sm|md|lg] code that makes previous text
+  // image generation request prompt
+  // we need proper name for this code injections
+
+  const lastMessage = chatHistory[chatHistory.length - 1]
+  const imgGenReq = parseImageGenerationRequest(lastMessage.content)
+
   const spin = clackPrompt.spinner()
+
+  if (imgGenReq !== null) {
+    spin.start('GENERATING IMAGE...')
+
+    const imgURL = await ai.processImageRequest(imgGenReq)
+
+    spin.stop(`${cliColor.green('AI:')}`)
+    console.log(`\nimage url: ${imgURL}`)
+
+    // TODO: maybe better ask for copying to clipboard?
+    execSync(`echo "${imgURL}" | ${process.platform === 'win32' ? 'clip' : 'pbcopy'}`)
+    console.log('\nURL is copied to your clipboard!')
+
+    const updatedChatHistory = chatHistory.slice(0, chatHistory.length - 2)
+    return conversation(ai, updatedChatHistory, true)
+  }
 
   spin.start('THINKING...')
 
-  const { makeResponseWriter } = await processAIRequest(chatHistory)
+  const { makeResponseWriter } = await ai.processChatRequest(chatHistory)
 
   spin.stop(`${cliColor.green('AI:')}`)
 
@@ -56,5 +97,5 @@ export async function conversation(
 
   chatHistory.push({ role: 'user', content: userPrompt })
 
-  return conversation(processAIRequest, chatHistory)
+  return conversation(ai, chatHistory)
 }
