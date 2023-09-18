@@ -27,12 +27,6 @@ export async function getUserPrompt(message: string) {
   return (await group).prompt
 }
 
-// TODO: I guess mixing up image generation and chat ability
-// might not be a great ide, perhaps we could create some
-// intermediate crossover for `chatHistory` and route things to
-// `conversation` and ... on the second thought the way we did it
-// is kind of part of the conversation, let's finish the prototype
-// and decide then
 export async function conversation(
   ai: {
     processChatRequest: (chatHistory: I.GPTMessage[]) => Promise<{

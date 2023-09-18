@@ -1,7 +1,8 @@
 import { command } from 'cleye'
 
-import { generateAIResponseStream, generateImage } from '../AI'
 import { conversation } from '../utils/interactive-cli'
+import { getClipboardText } from '../utils/clipboard'
+import { generateAIResponseStream, generateImage } from '../AI'
 
 import * as I from '../types'
 
@@ -17,18 +18,42 @@ const startConversation = (initialChatHistory?: I.GPTMessage[]) =>
 export default command(
   {
     name: 'chat',
+    flags: {
+      fromClipboard: {
+        type: Boolean,
+        description: 'Start conversation with AI where first message is a text from clipboard',
+        alias: 'c',
+      },
+    },
     help: {
       description: 'Start conversation with ChatGPT',
     },
   },
   (argv) => {
-    // IDEA: I guess ability to send initial message should be alongside
-    // the other kind of response, it should be compatible for usage
-    // as cli tool in the pipe, e.g. takes text input and sends right output
-    //
-    // For now we consider this API feature as mean for creation
-    // imperatively driven chat assistant quickly
-    const initialMessage = argv._.length > 0 ? argv._.join(' ').trim() || undefined : undefined
+    const initialMessage = ((): string | undefined => {
+      if (argv.flags.fromClipboard) {
+        const clipboardText = getClipboardText()
+
+        if (typeof clipboardText !== 'string') {
+          return clipboardText
+        }
+
+        console.log('Following text from your clipboard will be used as first message in AI conversation:\n\n')
+        console.log(clipboardText)
+        console.log('\n')
+
+        return clipboardText
+      }
+
+      /* TODO: I believe it would be beneficial to include the ability
+      to send an initial message alongside other types of responses.
+      This would make it compatible for usage as a command-line tool
+      in a pipeline, where it can take text input and provide the appropriate output. */
+
+      if (argv._.length > 0) {
+        return argv._.join(' ').trim()
+      }
+    })()
 
     return initialMessage ? startConversation([{ role: 'user', content: initialMessage }]) : startConversation()
   }

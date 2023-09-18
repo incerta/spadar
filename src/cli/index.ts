@@ -4,7 +4,7 @@ import { version } from '../../package.json'
 import chat from './chat'
 
 cli({
-  name: 'meatbag-crusher',
+  name: 'spadar',
   version: version,
   commands: [chat],
 })

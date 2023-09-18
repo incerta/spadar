@@ -27,7 +27,21 @@ spadar() {
 # Currently supported features
 ## AI Chat with GPT
 
-Make conversation with AI through CLI.
+## Conversation with AI through CLI
+
+Just use `chat` parameter:
+
+```sh
+spadar chat
+```
+
+Usage:
+  spadar chat [flags...]
+
+Flags:
+  -c, --from-clipboard        Start conversation with AI where first message is a text from clipboard
+  -h, --help                  Show help
+
 ## Image generation prototype feature
 
 While in conversation with AI one can request image generation through a special `[img:$SIZE]` marker. Where `$SIZE` has three possible options for image generation:

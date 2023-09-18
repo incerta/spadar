@@ -1,6 +1,6 @@
 {
   "name": "spadar",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Software engineer AI helper",
   "main": "src/index.ts",
   "scripts": {
