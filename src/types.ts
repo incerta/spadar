@@ -1,14 +1,11 @@
-import { CreateImageRequestSizeEnum } from 'openai'
+import { ImageGenerateParams } from 'openai/src/resources/images'
 
 export type GPTMessage = {
   role: 'system' | 'assistant' | 'user'
   content: string
 }
 
-// TODO: since we have image generation request
-// it might be good course of action to rename it
-// to `ResponseMessageRequest` 
-export type AIRequest = {
+export type AIConversationReq = {
   messages: GPTMessage[]
   /* What sampling temperature to use, between 0 and 2. 
     Higher values like 0.8 will make the output more random,
@@ -17,10 +14,10 @@ export type AIRequest = {
     If the value is not specified – the system will use 0 as default.
     */
   temperature?: number
-  model?: 'gpt-3.5-turbo'
+  model?: 'gpt-3.5-turbo' | 'gpt-4'
 }
 
 export type ImageGenerationRequest = {
-  size: CreateImageRequestSizeEnum
+  size: ImageGenerateParams['size']
   prompt: string
 }

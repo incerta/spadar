@@ -1,6 +1,6 @@
 {
   "name": "spadar",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Software engineer AI helper",
   "main": "src/index.ts",
   "scripts": {
@@ -29,6 +29,6 @@
     "cleye": "^1.3.2",
     "dotenv": "^16.0.3",
     "kolorist": "^1.8.0",
-    "openai": "^3.2.1"
+    "openai": "^4.8.0"
   }
 }
