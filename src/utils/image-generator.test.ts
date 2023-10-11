@@ -31,7 +31,7 @@ describe('parseImageGenerationRequest fn', () => {
           expect(result.size).toBe('512x512')
           break
         case 'lg':
-          expect(result.size).toBe('256x256')
+          expect(result.size).toBe('1024x1024')
           break
       }
     })
