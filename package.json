@@ -10,7 +10,7 @@
     "lint": "eslint ."
   },
   "author": "Mitch Neverhood",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.1",
     "@types/node": "^20.1.4",
