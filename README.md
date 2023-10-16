@@ -25,6 +25,7 @@ spadar() {
 ```
 
 # Currently supported features
+
 ## AI Chat with GPT
 
 ## Conversation with AI through CLI
@@ -36,21 +37,22 @@ spadar chat
 ```
 
 Usage:
-  spadar chat [flags...]
+spadar chat [flags...]
 
 Flags:
-  -c, --from-clipboard        Start conversation with AI where first message is a text from clipboard
-  -h, --help                  Show help
+-c, --from-clipboard Start conversation with AI where first message is a text from clipboard
+-h, --help Show help
 
 ## Image generation prototype feature
 
 While in conversation with AI one can request image generation through a special `[img:$SIZE]` marker. Where `$SIZE` has three possible options for image generation:
 
-  - `sm` for 256x256 resolution
-  - `md` for 512x512 resolution
-  - `lg` for 1024x1024 resolution
+- `sm` for 256x256 resolution
+- `md` for 512x512 resolution
+- `lg` for 1024x1024 resolution
 
 Example:
+
 ```
 green field and blue sky [img:sm]
 ```

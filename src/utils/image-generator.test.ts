@@ -13,7 +13,9 @@ describe('parseImageGenerationRequest fn', () => {
   })
 
   it('Should parse expected values', () => {
-    ;['sm', 'md', 'lg'].forEach((sizeLabel) => {
+    const sizeLabel = ['sm', 'md', 'lg']
+
+    sizeLabel.forEach((sizeLabel) => {
       const prompt = 'blue sky and green field'
       const message = `${prompt} [img:${sizeLabel}]`
 

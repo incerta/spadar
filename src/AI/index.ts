@@ -12,7 +12,7 @@ export async function generateAIResponseStream({ messages, temperature, model }:
     stream: true,
   })
 
-  const makeResponseWriter = (writer: (messageToken: string) => void) =>
+  const makeResponseWriter = (writer: (messageToken: string) => void): Promise<string> =>
     new Promise(async (resolve) => {
       let completeMessage = ''
 

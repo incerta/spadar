@@ -7,7 +7,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint:fix": "prettier --write .",
-    "lint": "prettier --check ."
+    "lint": "eslint ."
   },
   "author": "Mitch Neverhood",
   "license": "ISC",
