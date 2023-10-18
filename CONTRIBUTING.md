@@ -1,0 +1,96 @@
+# Table of Contents
+
+- [How to Contribute?](#how-to-contribute)
+  - [Create Issue](#create-issue)
+  - [Pull Request](#pull-request)
+    - [Pull Request Format](#pull-request-format)
+    - [Commit Message Format](#commit-message-format)
+- [Project Files Structure](#project-files-structure)
+- [Glossary](#glossary)
+
+# How to Contribute?
+
+If you just don't like to follow any guidelines we will appreciate your `PR` anyway but here is the general routine from having an idea to `PR` submission:
+
+- [Search for an issue](https://github.com/incerta/spadar/issues) related to your idea
+- If you don't find one, [create it](#create-issue) or make a PR right away for simple fixes
+- If you want to work on it yourself, please leave a comment with an approximate estimate of when it could be done
+- Don't worry if you miss your deadline, just leave a comment with a re-estimate or do nothing if you are not planning to work on this anytime soon
+- If you find an issue, please check if someone might already be working on it before rushing into a solution
+- [Create PR](#pull-request) when you finished or did some partial progress
+
+## Create Issue
+
+Please try to use recommended format for issues below:
+
+- **Title**: Start with a concise and informative summary of the issue. It should give a clear idea of what the problem is.
+- **Description**: Provide a detailed description of the issue. Explain what is happening, what you expected to happen, and why this is a problem. If possible, include steps to reproduce the issue.
+- **Labels**: Use labels to categorize the issue. This can help other contributors understand the issue's priority, type (bug, feature request, etc.), or which part of the project it relates to.
+- **Screenshots**: If the issue is a bug and it's possible to capture it visually, include screenshots or GIFs. This can help others understand exactly what's going wrong.
+- **Environment**: Include information about your environment, like the browser or OS where the issue occurs, the version of the project you're using, etc.
+- **Possible Solution**: If you have an idea for how to fix the issue, include it here. This isn't required, but it can help move the discussion forward.
+
+Remember, the goal of the issue description is to provide enough information to others so they can understand the issue and potentially work on a fix.
+
+## Pull Request
+
+Our `dev` branch is default for PR's submissions.
+
+### Pull Request Format
+
+- **Title**: Start with a brief, clear summary of the changes. Use imperative mood, like "Add feature X" or "Fix bug in Y".
+- **Description**: Provide a detailed description of the changes. Explain why you made the changes, how they address the issue, and any potential side effects.
+- **Link Issues**: If the PR is related to any open issues, link them in the description. This helps to track the progress of the issue.
+- **Testing**: Describe how the changes have been tested or provide steps for reviewers to test the changes.
+
+### Commit Message Format
+
+Just use imperative mood like "Add feature X" or "Fix bug in Y". The commit format example:
+
+```
+Short message at the top
+
+- Some specifics listed using dash `-` symbol
+- Usually we want to see separate commit for each distinct microtask
+```
+
+# Project Files Structure
+
+Paths are defined relative to the root of the project (repository)
+
+## Project root files
+
+`package.json` - nodejs dependencies (`dependencies`, `devDependencies`) and development commands (`scripts`)
+`.env` - environment variables file `.env` (the file in the `.gitignore`)
+`.env.example` - example of `.env` content
+`node_modules` - installed nodejs dependencies source
+`tmp` - just directory in `.gitignore` for saving temporary stuff related to the project
+
+## src
+
+The directory where source code of the `bots` is stored alongside with `bot-cli` implementation
+
+`src/types.ts` - the project domain specific types
+`src/bots/${bot-name}` - a `bot` source directory
+`src/cli` - the directory cli source code
+`src/AI` - the directory for artificial intelligence API adapters
+
+# Glossary (TODO)
+
+Description of the current project terminology. Writing documentation one should wrap following terms in backticks: ``
+
+`bot` - is command line interface that uses file or directory path as an input and has a different output depending on the bot type
+`bot-memo` - the description of the `bot` in `markdown` format
+`bot-name` - name of the specific `bot`
+`bot-cli` - command line interface of a `bot`
+`reactor` - the place in the project file structure where bot outputs are saved
+`app` - application of the `bot` output
+`app-memo` - the description of the `app` in `markdown` format
+`app-name` - name of the specific `app`
+
+# Bot types (TODO)
+
+Here we are listing each type of the `bot` with brief description. Each bot has `-bot` suffix in its name. The source of each bot stored at `src/bot/${bot-name}` directory and has its own `README.md` documentation file
+
+`refiner-bot` - takes any `.md` file path as an input and outputs with refined version of the file
+`clarity-bot` - takes `app-memo` as an input and outputs with refined version
