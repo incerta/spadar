@@ -8,7 +8,7 @@
     "test:watch": "jest --watch",
     "lint:fix": "prettier --write .",
     "lint": "eslint .",
-    "type-check": "tsc",
+    "type-check": "tsc --noEmit",
     "prepare": "husky install"
   },
   "author": "Mitch Neverhood",
