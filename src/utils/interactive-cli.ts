@@ -29,12 +29,12 @@ export async function getUserPrompt(message: string) {
 
 export async function conversation(
   ai: {
-    processChatRequest: (chatHistory: I.GPTMessage[]) => Promise<{
+    processChatRequest: (chatHistory: I.AIMessage[]) => Promise<{
       makeResponseWriter: (writer: (data: string) => void) => Promise<string>
     }>
     processImageRequest: (req: I.ImageGenerationRequest) => Promise<string>
   },
-  chatHistory: I.GPTMessage[] = [],
+  chatHistory: I.AIMessage[] = [],
   isContinueExistedConversation = false
 ): Promise<void> {
   const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)

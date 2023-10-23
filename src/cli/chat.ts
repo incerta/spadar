@@ -6,7 +6,7 @@ import { generateAIResponseStream, generateImage } from '../AI'
 
 import * as I from '../types'
 
-const startConversation = (initialChatHistory?: I.GPTMessage[]) =>
+const startConversation = (initialChatHistory?: I.AIMessage[]) =>
   conversation(
     {
       processChatRequest: (chatHistory) => generateAIResponseStream({ messages: chatHistory }),
