@@ -1,19 +1,26 @@
 import { command } from 'cleye'
 
-import { conversation } from '../utils/interactive-cli'
-import { getClipboardText } from '../utils/clipboard'
-import { generateAIResponseStream, generateImage } from '../AI'
+import { DEFAULT_LLM } from '../constants'
+import { conversation, displayConverstaionContext } from '../utils/interactive-cli'
+import { complitionStreamFactory } from '../utils/text-generator'
+import { getIsRunningInPipe, getCLIPipeMessege, getClipboardText } from '../utils/command-line'
+import { getLLMAdapter } from '../utils/adapter'
+import { generateImage } from '../AI'
 
 import * as I from '../types'
 
-const startConversation = (initialChatHistory?: I.AIMessage[]) =>
-  conversation(
+const runCLIChat = (options: I.LLMOptions, initialMessages?: I.ChatMessage[]) => {
+  const adapter = getLLMAdapter(options.model, options.adapterId)
+  const runComplitionStream = complitionStreamFactory(adapter.chatToAnswerStream)
+
+  return conversation(
     {
-      processChatRequest: (chatHistory) => generateAIResponseStream({ messages: chatHistory }),
-      processImageRequest: (req: I.ImageGenerationRequest) => generateImage(req),
+      processAnswerRequest: (messages) => runComplitionStream(options, messages),
+      processImageRequest: (image) => generateImage(image),
     },
-    initialChatHistory
+    initialMessages
   )
+}
 
 export default command(
   {
@@ -24,37 +31,87 @@ export default command(
         description: 'Start conversation with AI where first message is a text from clipboard',
         alias: 'c',
       },
+
+      model: {
+        type: String,
+        description: 'Choose the Large Language Model like: "gpt-3.5-turbo", "gpt-4"',
+        alias: 'm',
+      },
+
+      adapter: {
+        type: String,
+        description: 'Choose specific built-in or external adapter for LLM complition processing',
+        alias: 'a',
+      },
+
+      temperature: {
+        type: Number,
+        description:
+          "OpenAI's API adjusts output diversity, with a value range from 0.0 (more deterministic) to 1.0 (more random).",
+        alias: 't',
+      },
+
+      maxTokens: {
+        type: Number,
+        description: 'Sets the maximum number of tokens allowed in both input and output text',
+      },
+
+      topP: {
+        type: Number,
+        description:
+          "OpenAI's API adjusts output diversity, with a value range from 0.0 (more deterministic) to 1.0 (more random).",
+      },
+
+      disableContextDisplay: {
+        type: Boolean,
+        description: 'disabled dispaying conversation context in case we are using conversation from clipboard or pipe',
+        alias: 'd',
+      },
     },
     help: {
       description: 'Start conversation with ChatGPT',
     },
   },
-  (argv) => {
-    const initialMessage = ((): string | undefined => {
-      if (argv.flags.fromClipboard) {
-        const clipboardText = getClipboardText()
+  async (argv) => {
+    const { adapter, model, maxTokens, temperature, topP, disableContextDisplay } = argv.flags
 
-        if (typeof clipboardText !== 'string') {
-          return clipboardText
-        }
+    if (temperature && (temperature < 0 || temperature > 1)) {
+      throw Error(`Allowed --temperature paramter value range is between 0.0 and 1.0 but given: ${temperature}`)
+    }
 
-        console.log('Following text from your clipboard will be used as first message in AI conversation:\n\n')
-        console.log(clipboardText)
-        console.log('\n')
+    if (topP && (topP < 0 || topP > 1)) {
+      throw Error(`Allowed --topP paramter value range is between 0.0 and 1.0 but given: ${topP}`)
+    }
 
-        return clipboardText
+    const options: I.LLMOptions = {
+      model: (model || DEFAULT_LLM) as I.LLMId,
+      adapterId: adapter as I.LLMAdapterId,
+      maxTokens: maxTokens,
+      temperature: temperature,
+      topP: topP,
+    }
+
+    if (argv.flags.fromClipboard) {
+      const clipboardText = getClipboardText()
+
+      if (clipboardText) {
+        const messages: I.ChatMessage[] = [{ role: 'user', content: clipboardText }]
+
+        if (!disableContextDisplay) displayConverstaionContext(messages)
+        runCLIChat(options, messages)
+        return
       }
+    }
 
-      /* TODO: I believe it would be beneficial to include the ability
-      to send an initial message alongside other types of responses.
-      This would make it compatible for usage as a command-line tool
-      in a pipeline, where it can take text input and provide the appropriate output. */
+    if (getIsRunningInPipe()) {
+      const messageFromPipe = await getCLIPipeMessege()
+      const messages: I.ChatMessage[] = [{ role: 'user', content: messageFromPipe }]
 
-      if (argv._.length > 0) {
-        return argv._.join(' ').trim()
-      }
-    })()
+      if (!disableContextDisplay) displayConverstaionContext(messages)
+      runCLIChat(options, messages)
+      return
+    }
 
-    return initialMessage ? startConversation([{ role: 'user', content: initialMessage }]) : startConversation()
+    runCLIChat(options)
   }
 )

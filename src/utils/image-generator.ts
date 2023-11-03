@@ -1,12 +1,12 @@
 import * as I from '../types'
 
-const DEFAULT_SIZE: I.ImageGenerationRequest['size'] = '256x256'
+const DEFAULT_SIZE = '256x256'
 
 /*
  *  Valid string example:
  *  "blue sky and green field [img:800x600]"
  */
-export function parseImageGenerationRequest(source: string): null | I.ImageGenerationRequest {
+export function parseImageGenerationRequest(source: string): null | I.ImageRequest {
   const pattern = /\[img:(sm|lg|md)\]/
   const match = source.match(pattern)
 
@@ -14,7 +14,7 @@ export function parseImageGenerationRequest(source: string): null | I.ImageGener
     return null
   }
 
-  const size = ((): I.ImageGenerationRequest['size'] => {
+  const size = ((): I.ImageRequest['size'] => {
     const sizeLabel = match[1]
 
     if (typeof sizeLabel !== 'string') return DEFAULT_SIZE
@@ -33,5 +33,5 @@ export function parseImageGenerationRequest(source: string): null | I.ImageGener
 
   const prompt = source.slice(0, match.index).trim()
 
-  return { prompt, size }
+  return { prompt, size, model: 'DALL-E' as I.LLMId }
 }

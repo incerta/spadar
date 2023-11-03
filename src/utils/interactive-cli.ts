@@ -1,6 +1,7 @@
 import * as cliColor from 'kolorist'
 import * as clackPrompt from '@clack/prompts'
 import { execSync } from 'child_process'
+import readline from 'readline'
 
 import { parseImageGenerationRequest } from '../utils/image-generator'
 
@@ -27,32 +28,38 @@ export async function getUserPrompt(message: string) {
   return (await group).prompt
 }
 
+const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
+
+// TODO: align display context format with `conversation` UI
+export const displayConverstaionContext = (messages: I.ChatMessage[]) => {
+  console.log('\n\nConverstaion context:')
+
+  messages.forEach(({ role, content }) => {
+    if (role === 'assistant') return
+    console.log(`\n  role: ${role}:\n    ${content}`)
+  })
+
+  console.log('\n')
+}
+
 export async function conversation(
   ai: {
-    processChatRequest: (chatHistory: I.AIMessage[]) => Promise<{
-      makeResponseWriter: (writer: (data: string) => void) => Promise<string>
+    processAnswerRequest: (chatHistory: I.ChatMessage[]) => Promise<{
+      requestAnswerStream: (onStreamChunkReceived: (data: string) => void) => Promise<string>
+      cancel: () => void
     }>
-    processImageRequest: (req: I.ImageGenerationRequest) => Promise<string>
+    processImageRequest: (req: I.ImageRequest) => Promise<string>
   },
-  chatHistory: I.AIMessage[] = [],
-  isContinueExistedConversation = false
+  chatHistory: I.ChatMessage[] = [],
+  isRecursiveCall = false
 ): Promise<void> {
-  const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
-
-  if (chatHistory.length === 0 || isContinueExistedConversation) {
-    const conversationTitle = isContinueExistedConversation ? 'Conversation continued' : 'Starting new conversation'
+  if (chatHistory.length === 0 || isRecursiveCall) {
+    const conversationTitle = isRecursiveCall ? 'Conversation continued' : 'Starting new conversation'
 
     console.log('')
     clackPrompt.intro(conversationTitle)
     chatHistory.push({ role: 'user', content: await getPromptFromYou() })
   }
-
-  // TODO: we are trying to invent internal
-  // message code for some extra actions
-  // for now only supported thing is
-  // [img:sm|md|lg] code that makes previous text
-  // image generation request prompt
-  // we need proper name for this code injections
 
   const lastMessage = chatHistory[chatHistory.length - 1]
   const imgGenReq = parseImageGenerationRequest(lastMessage.content)
@@ -77,12 +84,27 @@ export async function conversation(
 
   spin.start('THINKING...')
 
-  const { makeResponseWriter } = await ai.processChatRequest(chatHistory)
+  const { requestAnswerStream } = await ai.processAnswerRequest(chatHistory)
 
   spin.stop(`${cliColor.green('AI:')}`)
 
+  /* TODO: unfortunately method below is not working in the current context
+   we want to `cancel` the stream on "s" key press, the `cancel` method
+   can be destructured from `await ai.processAnswerRequest(chatHistory)` statement
+   
+  ```
+    readline.emitKeypressEvents(process.stdin)
+    process.stdin.setRawMode(true)
+    process.stdin.on('keypress', (_, key) => {
+      if (key.sequence === 's') {
+        cancel()
+      }
+    })
+  ```
+  */
+
   console.log('')
-  const responseMessage = await makeResponseWriter(process.stdout.write.bind(process.stdout))
+  const responseMessage = await requestAnswerStream(process.stdout.write.bind(process.stdout))
   console.log('\n')
 
   chatHistory.push({ role: 'assistant', content: responseMessage })

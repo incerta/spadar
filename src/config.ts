@@ -2,11 +2,11 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const REQUIRED_ENVS = ['OPEN_AI_API_KEY', 'OPEN_AI_ORGANIZATION']
+const REQUIRED_ENVS = ['OPEN_AI_API_KEY']
 
-const { OPEN_AI_API_KEY, OPEN_AI_ORGANIZATION, LOGS_PATH } = process.env
+const { OPEN_AI_API_KEY } = process.env
 
-if (!OPEN_AI_API_KEY || !OPEN_AI_ORGANIZATION) {
+if (!OPEN_AI_API_KEY) {
   const missingEnvs = REQUIRED_ENVS.filter((x) => !process.env[x]).join(', ')
   throw new Error(
     'Some of .env required variables has not been set\n' +
@@ -18,6 +18,5 @@ if (!OPEN_AI_API_KEY || !OPEN_AI_ORGANIZATION) {
 }
 
 export default {
-  logsPath: LOGS_PATH,
-  openAI: { organization: OPEN_AI_ORGANIZATION, apiKey: OPEN_AI_API_KEY },
+  openAI: { apiKey: OPEN_AI_API_KEY },
 }
