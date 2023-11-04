@@ -9,7 +9,7 @@ import { generateImage } from '../AI'
 
 import * as I from '../types'
 
-const runCLIChat = (options: I.LLMOptions, initialMessages?: I.ChatMessage[]) => {
+const runCLIChat = (options: I.TextOptions, initialMessages?: I.TextUnit[]) => {
   const adapter = getLLMAdapter(options.model, options.adapterId)
   const runComplitionStream = complitionStreamFactory(adapter.chatToAnswerStream)
 
@@ -83,7 +83,7 @@ export default command(
       throw Error(`Allowed --topP paramter value range is between 0.0 and 1.0 but given: ${topP}`)
     }
 
-    const options: I.LLMOptions = {
+    const options: I.TextOptions = {
       model: (model || DEFAULT_LLM) as I.LLMId,
       adapterId: adapter as I.LLMAdapterId,
       maxTokens: maxTokens,
@@ -95,7 +95,7 @@ export default command(
       const clipboardText = getClipboardText()
 
       if (clipboardText) {
-        const messages: I.ChatMessage[] = [{ role: 'user', content: clipboardText }]
+        const messages: I.TextUnit[] = [{ role: 'user', content: clipboardText }]
 
         if (!disableContextDisplay) displayConverstaionContext(messages)
         runCLIChat(options, messages)
@@ -105,7 +105,7 @@ export default command(
 
     if (getIsRunningInPipe()) {
       const messageFromPipe = await getCLIPipeMessege()
-      const messages: I.ChatMessage[] = [{ role: 'user', content: messageFromPipe }]
+      const messages: I.TextUnit[] = [{ role: 'user', content: messageFromPipe }]
 
       if (!disableContextDisplay) displayConverstaionContext(messages)
       runCLIChat(options, messages)

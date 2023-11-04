@@ -31,7 +31,7 @@ export async function getUserPrompt(message: string) {
 const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
 
 // TODO: align display context format with `conversation` UI
-export const displayConverstaionContext = (messages: I.ChatMessage[]) => {
+export const displayConverstaionContext = (messages: I.TextUnit[]) => {
   console.log('\n\nConverstaion context:')
 
   messages.forEach(({ role, content }) => {
@@ -44,13 +44,13 @@ export const displayConverstaionContext = (messages: I.ChatMessage[]) => {
 
 export async function conversation(
   ai: {
-    processAnswerRequest: (chatHistory: I.ChatMessage[]) => Promise<{
+    processAnswerRequest: (chatHistory: I.TextUnit[]) => Promise<{
       requestAnswerStream: (onStreamChunkReceived: (data: string) => void) => Promise<string>
       cancel: () => void
     }>
-    processImageRequest: (req: I.ImageRequest) => Promise<string>
+    processImageRequest: (req: I.ImageUnit) => Promise<string>
   },
-  chatHistory: I.ChatMessage[] = [],
+  chatHistory: I.TextUnit[] = [],
   isRecursiveCall = false
 ): Promise<void> {
   if (chatHistory.length === 0 || isRecursiveCall) {

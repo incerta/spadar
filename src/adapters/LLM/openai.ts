@@ -22,7 +22,7 @@ const SUPPORTED_MODELS = new Set([
   'gpt-3.5-turbo-16k-0613',
 ]) as Set<I.LLMId>
 
-const optionsMapper = (p: I.LLMOptions): CompatibleCompletionOptions => {
+const optionsMapper = (p: I.TextOptions): CompatibleCompletionOptions => {
   if (SUPPORTED_MODELS.has(p.model) === false) {
     throw Error(`Adapter "${ADAPTER_ID}" is not supporting the model: "${p.model}"`)
   }
@@ -37,7 +37,7 @@ const optionsMapper = (p: I.LLMOptions): CompatibleCompletionOptions => {
 
 const openAI = new OpenAI({ apiKey: config.openAI.apiKey })
 
-const requestAnswer = async (options: I.LLMOptions, messages: I.ChatMessage[]) => {
+const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   const completion = await openAI.chat.completions.create({
     ...optionsMapper(options),
     messages: messages,
@@ -50,7 +50,7 @@ const requestAnswer = async (options: I.LLMOptions, messages: I.ChatMessage[]) =
   return message
 }
 
-const requestAnswerStream = async (options: I.LLMOptions, messages: I.ChatMessage[]) => {
+const requestAnswerStream = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   const originalStream = await openAI.chat.completions.create({
     ...optionsMapper(options),
     messages: messages,
@@ -76,7 +76,7 @@ const requestAnswerStream = async (options: I.LLMOptions, messages: I.ChatMessag
   }
 }
 
-const adapter: I.LLMAdapter = {
+const adapter: I.TextAdapter = {
   id: ADAPTER_ID,
   type: 'LLM',
   description: 'Built in OpenAI models adapter',
@@ -84,7 +84,7 @@ const adapter: I.LLMAdapter = {
 
   chatToChat: async (chat) => {
     const answer = await requestAnswer(chat, chat.messages)
-    const message: I.ChatMessage = { role: 'assistant', content: answer }
+    const message: I.TextUnit = { role: 'assistant', content: answer }
     return { ...chat, messages: [...chat.messages, message] }
   },
 

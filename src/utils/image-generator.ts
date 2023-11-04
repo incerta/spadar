@@ -6,7 +6,7 @@ const DEFAULT_SIZE = '256x256'
  *  Valid string example:
  *  "blue sky and green field [img:800x600]"
  */
-export function parseImageGenerationRequest(source: string): null | I.ImageRequest {
+export function parseImageGenerationRequest(source: string): null | I.ImageUnit {
   const pattern = /\[img:(sm|lg|md)\]/
   const match = source.match(pattern)
 
@@ -14,7 +14,7 @@ export function parseImageGenerationRequest(source: string): null | I.ImageReque
     return null
   }
 
-  const size = ((): I.ImageRequest['size'] => {
+  const size = ((): I.ImageUnit['size'] => {
     const sizeLabel = match[1]
 
     if (typeof sizeLabel !== 'string') return DEFAULT_SIZE

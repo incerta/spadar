@@ -1,7 +1,7 @@
 import { selectLLMAdapter } from '../adapters/LLM'
 import * as I from '../types'
 
-export const getLLMAdapter = (model: I.LLMId, adapterIdOverride?: I.LLMAdapterId): I.LLMAdapter => {
+export const getLLMAdapter = (model: I.LLMId, adapterIdOverride?: I.LLMAdapterId): I.TextAdapter => {
   if (adapterIdOverride) {
     const requestedAdapter = selectLLMAdapter.byId.get(adapterIdOverride)
 

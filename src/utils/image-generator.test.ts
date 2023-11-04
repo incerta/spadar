@@ -19,7 +19,7 @@ describe('parseImageGenerationRequest fn', () => {
       const prompt = 'blue sky and green field'
       const message = `${prompt} [img:${sizeLabel}]`
 
-      const result = parseImageGenerationRequest(message) as DeepPartial<I.ImageRequest>
+      const result = parseImageGenerationRequest(message) as DeepPartial<I.ImageUnit>
 
       if (result === null) expect(true).toBe(false)
 

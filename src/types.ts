@@ -8,7 +8,7 @@ export type LLMAdapterId = string & { __idFor: 'ModelAdapter' }
 export type LIMAdapterId = string & { __idFor: 'ModelAdapter' }
 
 /* A message from/for a LLM */
-export type ChatMessage = {
+export type TextUnit = {
   role:
     | 'system' // Role that sets the behavior of the assistant
     | 'assistant' // AI model that generates conversation responses
@@ -16,10 +16,8 @@ export type ChatMessage = {
   content: string
 }
 
-export type LLMOptions = {
-  // TODO: make it `LLMId[]` where first item is desired model
-  // and all the rest is possible fallbacks if for the different adapters
-  model: LLMId
+export type TextOptions = {
+  model: LLMId[]
   adapterId?: LLMAdapterId
   maxTokens?: number
   temperature?: number
@@ -27,12 +25,12 @@ export type LLMOptions = {
 }
 
 /* The interface for LLM chat completion */
-export type Chat = LLMOptions & {
-  messages: ChatMessage[]
+export type Chat = TextOptions & {
+  messages: TextUnit[]
 }
 
 /* Broadcast LLM stream using the following format */
-export type StreamOfLLMTokens = Promise<{
+export type StreamOfText = Promise<{
   /* Cancel streaming hook */
   cancel: () => void
   /* Stream that can be processed by `for await (const token of stream)` syntax */
@@ -40,35 +38,35 @@ export type StreamOfLLMTokens = Promise<{
 }>
 
 /* The interface for LLM completion requests */
-export type LLMFunctions = {
+export type TextFunctions = {
   chatToChat: (c: Chat) => Promise<Chat>
   chatToAnswer: (c: Chat) => Promise<string>
-  chatToAnswerStream: (c: Chat) => StreamOfLLMTokens
-  questionToChat: (o: LLMOptions, question: string) => Promise<Chat>
-  questionToAnswer: (o: LLMOptions, question: string) => Promise<string>
-  questionToAnswerStream: (o: LLMOptions, question: string) => StreamOfLLMTokens
+  chatToAnswerStream: (c: Chat) => StreamOfText
+  questionToChat: (o: TextOptions, question: string) => Promise<Chat>
+  questionToAnswer: (o: TextOptions, question: string) => Promise<string>
+  questionToAnswerStream: (o: TextOptions, question: string) => StreamOfText
 }
 
-/* Large Language Model Adapter */
-export type LLMAdapter = {
+/* Large Language Model (LLM) Adapter */
+export type TextAdapter = TextFunctions & {
   id: LLMAdapterId
   type: 'LLM'
   for: Set<LLMId>
   description: string
-} & LLMFunctions
+}
 
 /* Large Image Model name like: 'DALL-E' */
 export type LIMId = string & { __idFor: 'LLM' }
 
 /* The interface for image generation request (PROTOTYPE) */
-export type ImageRequest = {
+export type ImageUnit = {
   model: LIMId
   size: string
   prompt: string
 }
 
-/* Large Image Model Adapter */
-export type LIMAdapter = {
+/* Large Image Model (LIM) Adapter */
+export type ImageAdapter = {
   id: LIMAdapterId
   types: 'LIM'
   for: LIMId[] /* first: priority; rest: fallbacks */

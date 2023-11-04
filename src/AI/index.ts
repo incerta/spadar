@@ -4,7 +4,7 @@ import * as I from '../types'
 
 const openAI = new OpenAI({ apiKey: config.openAI.apiKey })
 
-export async function generateImage(req: I.ImageRequest) {
+export async function generateImage(req: I.ImageUnit) {
   const response = await openAI.images.generate({
     prompt: req.prompt,
     n: 1,

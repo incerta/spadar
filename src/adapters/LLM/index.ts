@@ -3,21 +3,21 @@ import openAIAdapter from './openai'
 import * as I from '../../types'
 
 /* If two adapters handling same model the last one in the array will be selected */
-const BUILT_IN_LLM_ADAPTERS: I.LLMAdapter[] = [debugAdapter, openAIAdapter]
+const BUILT_IN_LLM_ADAPTERS: I.TextAdapter[] = [debugAdapter, openAIAdapter]
 
 const getFormattedMessage = (title: string, items: string[]) =>
   '\n\n' + title + '\n\n' + items.map((x) => '  - ' + x).join(',\n') + '\n'
 
 export const selectLLMAdapter = (() => {
-  const externalLLMAdapters: I.LLMAdapter[] = (() => {
+  const externalLLMAdapters: I.TextAdapter[] = (() => {
     // TODO: plan to put external adapter resolution logic here
     return []
   })()
 
   const allLLMAdapters = [...externalLLMAdapters, ...BUILT_IN_LLM_ADAPTERS]
 
-  const byId = new Map<I.LLMAdapterId, I.LLMAdapter>()
-  const byModelId = new Map<I.LLMId, I.LLMAdapter>()
+  const byId = new Map<I.LLMAdapterId, I.TextAdapter>()
+  const byModelId = new Map<I.LLMId, I.TextAdapter>()
 
   const supportedModelIdSet = new Set<I.LLMId>()
   const supportedAdapterIdSet = new Set<I.LLMAdapterId>()

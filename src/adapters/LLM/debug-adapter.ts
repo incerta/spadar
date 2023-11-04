@@ -6,12 +6,12 @@ import * as I from '../../types'
 const ADAPTER_ID = 'Debug-adapter' as I.LLMAdapterId
 const SUPPORTED_MODELS = new Set([DEFAULT_LLM]) as Set<I.LLMId>
 
-const requestAnswer = async (options: I.LLMOptions, messages: I.ChatMessage[]) => {
+const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   console.log('Answer requested:\n', JSON.stringify({ options, messages }))
   return 'DEBUG_MOCKED_MESSAGE'
 }
 
-const requestAnswerStream = async (options: I.LLMOptions, messages: I.ChatMessage[]) => {
+const requestAnswerStream = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   console.log('Answer stream requested:\n', JSON.stringify({ options, messages }))
 
   const modifiedStream = new PassThrough()
@@ -41,7 +41,7 @@ const requestAnswerStream = async (options: I.LLMOptions, messages: I.ChatMessag
   }
 }
 
-const adapter: I.LLMAdapter = {
+const adapter: I.TextAdapter = {
   id: ADAPTER_ID,
   type: 'LLM',
   description: 'Adapter that not doing any network requests but mocks the behaviour',
@@ -49,7 +49,7 @@ const adapter: I.LLMAdapter = {
 
   chatToChat: async (chat) => {
     const answer = await requestAnswer(chat, chat.messages)
-    const message: I.ChatMessage = { role: 'assistant', content: answer }
+    const message: I.TextUnit = { role: 'assistant', content: answer }
     return { ...chat, messages: [...chat.messages, message] }
   },
 
