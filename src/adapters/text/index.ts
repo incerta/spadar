@@ -16,11 +16,11 @@ export const selectLLMAdapter = (() => {
 
   const allLLMAdapters = [...externalLLMAdapters, ...BUILT_IN_LLM_ADAPTERS]
 
-  const byId = new Map<I.LLMAdapterId, I.TextAdapter>()
-  const byModelId = new Map<I.LLMId, I.TextAdapter>()
+  const byId = new Map<I.TextAdapterId, I.TextAdapter>()
+  const byModelId = new Map<I.TextModelId, I.TextAdapter>()
 
-  const supportedModelIdSet = new Set<I.LLMId>()
-  const supportedAdapterIdSet = new Set<I.LLMAdapterId>()
+  const supportedModelIdSet = new Set<I.TextModelId>()
+  const supportedAdapterIdSet = new Set<I.TextAdapterId>()
 
   allLLMAdapters.forEach((adapter) => {
     supportedAdapterIdSet.add(adapter.id)

@@ -33,5 +33,5 @@ export function parseImageGenerationRequest(source: string): null | I.ImageUnit 
 
   const prompt = source.slice(0, match.index).trim()
 
-  return { prompt, size, model: 'DALL-E' as I.LLMId }
+  return { prompt, size, model: 'DALL-E' as I.ImageModelId }
 }

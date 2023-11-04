@@ -7,7 +7,7 @@ import * as I from '../../types'
 type VendorCompletionOptions = OpenAI.Chat.Completions.ChatCompletionCreateParams
 type CompatibleCompletionOptions = Pick<VendorCompletionOptions, 'model' | 'temperature' | 'top_p' | 'max_tokens'>
 
-const ADAPTER_ID = 'OpenAI-LLM-spadar-built-in' as I.LLMAdapterId
+const ADAPTER_ID = 'OpenAI-LLM-spadar-built-in' as I.TextAdapterId
 const SUPPORTED_MODELS = new Set([
   'gpt-4',
   'gpt-4-0314',
@@ -20,7 +20,7 @@ const SUPPORTED_MODELS = new Set([
   'gpt-3.5-turbo-0301',
   'gpt-3.5-turbo-0613',
   'gpt-3.5-turbo-16k-0613',
-]) as Set<I.LLMId>
+]) as Set<I.TextModelId>
 
 const optionsMapper = (p: I.TextOptions): CompatibleCompletionOptions => {
   if (SUPPORTED_MODELS.has(p.model) === false) {
@@ -90,16 +90,6 @@ const adapter: I.TextAdapter = {
 
   chatToAnswer: (chat) => requestAnswer(chat, chat.messages),
   chatToAnswerStream: (chat) => requestAnswerStream(chat, chat.messages),
-
-  questionToChat: () => {
-    throw Error('This API is under construction')
-  },
-  questionToAnswer: () => {
-    throw Error('This API is under construction')
-  },
-  questionToAnswerStream: () => {
-    throw Error('This API is under construction')
-  },
 }
 
 export default adapter

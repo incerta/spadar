@@ -3,8 +3,8 @@ import { DEFAULT_LLM } from '../../constants'
 
 import * as I from '../../types'
 
-const ADAPTER_ID = 'Debug-adapter' as I.LLMAdapterId
-const SUPPORTED_MODELS = new Set([DEFAULT_LLM]) as Set<I.LLMId>
+const ADAPTER_ID = 'Debug-adapter' as I.TextAdapterId
+const SUPPORTED_MODELS = new Set([DEFAULT_LLM]) as Set<I.TextModelId>
 
 const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   console.log('Answer requested:\n', JSON.stringify({ options, messages }))
@@ -55,16 +55,6 @@ const adapter: I.TextAdapter = {
 
   chatToAnswer: (chat) => requestAnswer(chat, chat.messages),
   chatToAnswerStream: (chat) => requestAnswerStream(chat, chat.messages),
-
-  questionToChat: () => {
-    throw Error('This API is under construction')
-  },
-  questionToAnswer: () => {
-    throw Error('This API is under construction')
-  },
-  questionToAnswerStream: () => {
-    throw Error('This API is under construction')
-  },
 }
 
 export default adapter

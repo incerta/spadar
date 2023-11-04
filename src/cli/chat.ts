@@ -4,13 +4,13 @@ import { DEFAULT_LLM } from '../constants'
 import { conversation, displayConverstaionContext } from '../utils/interactive-cli'
 import { complitionStreamFactory } from '../utils/text-generator'
 import { getIsRunningInPipe, getCLIPipeMessege, getClipboardText } from '../utils/command-line'
-import { getLLMAdapter } from '../utils/adapter'
+import { getTextAdapter } from '../utils/adapter'
 import { generateImage } from '../AI'
 
 import * as I from '../types'
 
 const runCLIChat = (options: I.TextOptions, initialMessages?: I.TextUnit[]) => {
-  const adapter = getLLMAdapter(options.model, options.adapterId)
+  const adapter = getTextAdapter(options.model, options.adapterId)
   const runComplitionStream = complitionStreamFactory(adapter.chatToAnswerStream)
 
   return conversation(
@@ -84,8 +84,8 @@ export default command(
     }
 
     const options: I.TextOptions = {
-      model: (model || DEFAULT_LLM) as I.LLMId,
-      adapterId: adapter as I.LLMAdapterId,
+      model: (model || DEFAULT_LLM) as I.TextModelId,
+      adapterId: adapter as I.TextAdapterId,
       maxTokens: maxTokens,
       temperature: temperature,
       topP: topP,

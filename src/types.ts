@@ -1,12 +1,17 @@
 /* Large Language Model name like: 'gpt-3.5-turbo' | 'gpt-4' */
-export type LLMId = string & { __idFor: 'LLM' }
+export type TextModelId = string & { __idFor: 'TextModel' }
+
+/* Large Image Model name like: 'DALL-E' */
+export type ImageModelId = string & { __idFor: 'ImageModel' }
 
 /* A unique identifier for a Large Language Model adapter */
-export type LLMAdapterId = string & { __idFor: 'ModelAdapter' }
+export type TextAdapterId = string & { __idFor: 'TextAdapter' }
 
 /* A unique identifier for a Large Image Model adapter */
-export type LIMAdapterId = string & { __idFor: 'ModelAdapter' }
+export type ImageAdapterId = string & { __idFor: 'ImageAdapter' }
 
+// TODO: the interface is locked on OpenAI
+// should be more generic solution
 /* A message from/for a LLM */
 export type TextUnit = {
   role:
@@ -17,8 +22,8 @@ export type TextUnit = {
 }
 
 export type TextOptions = {
-  model: LLMId[]
-  adapterId?: LLMAdapterId
+  model: TextModelId
+  adapterId?: TextAdapterId
   maxTokens?: number
   temperature?: number
   topP?: number
@@ -42,32 +47,26 @@ export type TextFunctions = {
   chatToChat: (c: Chat) => Promise<Chat>
   chatToAnswer: (c: Chat) => Promise<string>
   chatToAnswerStream: (c: Chat) => StreamOfText
-  questionToChat: (o: TextOptions, question: string) => Promise<Chat>
-  questionToAnswer: (o: TextOptions, question: string) => Promise<string>
-  questionToAnswerStream: (o: TextOptions, question: string) => StreamOfText
 }
 
 /* Large Language Model (LLM) Adapter */
 export type TextAdapter = TextFunctions & {
-  id: LLMAdapterId
+  id: TextAdapterId
   type: 'LLM'
-  for: Set<LLMId>
+  for: Set<TextModelId>
   description: string
 }
 
-/* Large Image Model name like: 'DALL-E' */
-export type LIMId = string & { __idFor: 'LLM' }
-
 /* The interface for image generation request (PROTOTYPE) */
 export type ImageUnit = {
-  model: LIMId
+  model: ImageModelId
   size: string
   prompt: string
 }
 
 /* Large Image Model (LIM) Adapter */
 export type ImageAdapter = {
-  id: LIMAdapterId
+  id: ImageAdapterId
   types: 'LIM'
-  for: LIMId[] /* first: priority; rest: fallbacks */
+  for: ImageModelId[] /* first: priority; rest: fallbacks */
 }
