@@ -1,13 +1,18 @@
-import { PassThrough } from 'stream'
 import OpenAI from 'openai'
+import { PassThrough } from 'stream'
+
 import config from '../../config'
 
 import * as I from '../../types'
 
-type VendorCompletionOptions = OpenAI.Chat.Completions.ChatCompletionCreateParams
-type CompatibleCompletionOptions = Pick<VendorCompletionOptions, 'model' | 'temperature' | 'top_p' | 'max_tokens'>
+type VendorCompletionOptions =
+  OpenAI.Chat.Completions.ChatCompletionCreateParams
+type CompatibleCompletionOptions = Pick<
+  VendorCompletionOptions,
+  'model' | 'temperature' | 'top_p' | 'max_tokens'
+>
 
-const ADAPTER_ID = 'OpenAI-LLM-spadar-built-in' as I.TextAdapterId
+const ADAPTER_ID = 'OpenAI-LLM-spadar-built-in-text-adapter'
 const SUPPORTED_MODELS = new Set([
   'gpt-4',
   'gpt-4-0314',
@@ -20,11 +25,16 @@ const SUPPORTED_MODELS = new Set([
   'gpt-3.5-turbo-0301',
   'gpt-3.5-turbo-0613',
   'gpt-3.5-turbo-16k-0613',
-]) as Set<I.TextModelId>
+])
 
-const optionsMapper = (p: I.TextOptions): CompatibleCompletionOptions => {
+// TODO: instead of such options mappers we should allow to send
+// `unknown` adapter specific configs because on this stage
+// unification of their interfaces is not possible
+const optionsMapper = (p: any): CompatibleCompletionOptions => {
   if (SUPPORTED_MODELS.has(p.model) === false) {
-    throw Error(`Adapter "${ADAPTER_ID}" is not supporting the model: "${p.model}"`)
+    throw Error(
+      `Adapter "${ADAPTER_ID}" is not supporting the model: "${p.model}"`
+    )
   }
 
   return {
@@ -37,7 +47,7 @@ const optionsMapper = (p: I.TextOptions): CompatibleCompletionOptions => {
 
 const openAI = new OpenAI({ apiKey: config.openAI.apiKey })
 
-const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
+const requestAnswer = async (options: any, messages: any) => {
   const completion = await openAI.chat.completions.create({
     ...optionsMapper(options),
     messages: messages,
@@ -45,14 +55,16 @@ const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => 
 
   const message = completion['choices'][0]['message']['content']
 
-  if (typeof message !== 'string') throw Error('The OpenAI is reponsed with "null"')
+  if (typeof message !== 'string')
+    throw Error('The OpenAI is reponsed with "null"')
 
   return message
 }
 
-const requestAnswerStream = async (options: I.TextOptions, messages: I.TextUnit[]) => {
+const requestAnswerStream = async (options: any, messages: any) => {
   const originalStream = await openAI.chat.completions.create({
-    ...optionsMapper(options),
+    //    ...optionsMapper(options),
+    model: 'gpt-4',
     messages: messages,
     stream: true,
   })

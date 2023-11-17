@@ -1,3 +1,2 @@
+// TODO: move those constants to './config.ts' when they are configurable
 import * as I from './types'
-
-export const DEFAULT_LLM = 'gpt-4' as I.TextModelId

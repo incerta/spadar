@@ -1,10 +1,10 @@
 import { PassThrough } from 'stream'
-import { DEFAULT_LLM } from '../../constants'
+import { DEFAULT_TEXT_MODEL } from '../../constants'
 
 import * as I from '../../types'
 
 const ADAPTER_ID = 'Debug-adapter' as I.TextAdapterId
-const SUPPORTED_MODELS = new Set([DEFAULT_LLM]) as Set<I.TextModelId>
+const SUPPORTED_MODELS = new Set([DEFAULT_TEXT_MODEL]) as Set<I.TextModelId>
 
 const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
   console.log('Answer requested:\n', JSON.stringify({ options, messages }))

@@ -1,4 +1,8 @@
+import fs from 'fs'
 import { execSync } from 'child_process'
+
+import config from '../config'
+import { SpadarError } from './error'
 
 export function getClipboardText(): string | null {
   const command = ((): string => {
@@ -30,3 +34,23 @@ export const getCLIPipeMessege = (): Promise<string> =>
     process.stdin.on('data', (chunk) => (message += chunk.toString().trim()))
     process.stdin.on('end', () => resolve(message))
   })
+
+export const getAdapterModuleAbsolutePath = (relativePath: string): string => {
+  if (relativePath[0] === '/') {
+    throw new SpadarError(`
+      The given path "${relativePath}" is absolute, we expect
+      relative path as input of "validateFileRelativePath" function
+    `)
+  }
+
+  const currentPath = process.cwd() + '/'
+  const supposedFilePath = currentPath + config.adapter.schemaPath
+
+  if (fs.existsSync(supposedFilePath) === false) {
+    throw new SpadarError(`
+            The "${supposedFilePath}" file is not found
+          `)
+  }
+
+  return supposedFilePath
+}

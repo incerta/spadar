@@ -1,22 +1,107 @@
 import { command } from 'cleye'
+import * as clackPrompt from '@clack/prompts'
+import * as cliColor from 'kolorist'
 
-import { DEFAULT_LLM } from '../constants'
-import { conversation, displayConverstaionContext } from '../utils/interactive-cli'
+import { getUserPrompt } from '../utils/interactive-cli'
 import { complitionStreamFactory } from '../utils/text-generator'
-import { getIsRunningInPipe, getCLIPipeMessege, getClipboardText } from '../utils/command-line'
+import {
+  getIsRunningInPipe,
+  getCLIPipeMessege,
+  getClipboardText,
+} from '../utils/command-line'
 import { getTextAdapter } from '../utils/adapter'
-import { generateImage } from '../AI'
 
-import * as I from '../types'
+type Message = {
+  role: 'system' | 'assistant' | 'user'
+  content: string
+}
 
-const runCLIChat = (options: I.TextOptions, initialMessages?: I.TextUnit[]) => {
+const DEFAULT_TEXT_MODEL = 'gpt-4'
+
+const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
+
+export const displayConverstaionContext = (messages: Message[]) => {
+  console.log('\n\nConverstaion context:')
+
+  messages.forEach(({ role, content }) => {
+    console.log(`\n  role: ${role}:\n\n${content}`)
+  })
+
+  console.log('\n')
+}
+
+const conversation = async (
+  ai: {
+    processAnswerRequest: (chatHistory: Message[]) => Promise<{
+      requestAnswerStream: (
+        onStreamChunkReceived: (data: string) => void
+      ) => Promise<string>
+      cancel: () => void
+    }>
+    // TODO: unused API, revise after CHAT-PLUGIN discussion ends
+    processImageRequest?: (req: unknown) => Promise<string>
+  },
+  chatHistory: Message[] = [],
+  isRecursiveCall = false
+): Promise<void> => {
+  if (chatHistory.length === 0 || isRecursiveCall) {
+    const conversationTitle = isRecursiveCall
+      ? 'Conversation continued'
+      : 'Starting new conversation'
+
+    console.log('')
+    clackPrompt.intro(conversationTitle)
+    chatHistory.push({ role: 'user', content: await getPromptFromYou() })
+  }
+
+  const spin = clackPrompt.spinner()
+
+  spin.start('THINKING...')
+
+  const { requestAnswerStream } = await ai.processAnswerRequest(chatHistory)
+
+  spin.stop(`${cliColor.green('AI:')}`)
+
+  /* TODO: unfortunately method below is not working in the current context
+   we want to `cancel` the stream on "s" key press, the `cancel` method
+   can be destructured from `await ai.processAnswerRequest(chatHistory)` statement
+   
+  ```
+    readline.emitKeypressEvents(process.stdin)
+    process.stdin.setRawMode(true)
+    process.stdin.on('keypress', (_, key) => {
+      if (key.sequence === 's') {
+        cancel()
+      }
+    })
+  ```
+  */
+
+  console.log('')
+  const responseMessage = await requestAnswerStream(
+    process.stdout.write.bind(process.stdout)
+  )
+  console.log('\n')
+
+  chatHistory.push({ role: 'assistant', content: responseMessage })
+
+  const userPrompt = await getPromptFromYou()
+
+  chatHistory.push({ role: 'user', content: userPrompt })
+
+  return conversation(ai, chatHistory)
+}
+
+const runCLIChat = (options: unknown, initialMessages?: Message[]) => {
   const adapter = getTextAdapter(options.model, options.adapterId)
-  const runComplitionStream = complitionStreamFactory(adapter.chatToAnswerStream)
+  const runComplitionStream = complitionStreamFactory(
+    adapter.chatToAnswerStream
+  )
 
   return conversation(
     {
-      processAnswerRequest: (messages) => runComplitionStream(options, messages),
-      processImageRequest: (image) => generateImage(image),
+      processAnswerRequest: (messages) =>
+        runComplitionStream(options, messages),
     },
     initialMessages
   )
@@ -28,19 +113,22 @@ export default command(
     flags: {
       fromClipboard: {
         type: Boolean,
-        description: 'Start conversation with AI where first message is a text from clipboard',
+        description:
+          'Start conversation with AI where first message is a text from clipboard',
         alias: 'c',
       },
 
       model: {
         type: String,
-        description: 'Choose the Large Language Model like: "gpt-3.5-turbo", "gpt-4"',
+        description:
+          'Choose the Large Language Model like: "gpt-3.5-turbo", "gpt-4"',
         alias: 'm',
       },
 
       adapter: {
         type: String,
-        description: 'Choose specific built-in or external adapter for LLM complition processing',
+        description:
+          'Choose specific built-in or external adapter for LLM complition processing',
         alias: 'a',
       },
 
@@ -53,7 +141,8 @@ export default command(
 
       maxTokens: {
         type: Number,
-        description: 'Sets the maximum number of tokens allowed in both input and output text',
+        description:
+          'Sets the maximum number of tokens allowed in both input and output text',
       },
 
       topP: {
@@ -64,7 +153,8 @@ export default command(
 
       disableContextDisplay: {
         type: Boolean,
-        description: 'disabled dispaying conversation context in case we are using conversation from clipboard or pipe',
+        description:
+          'Disabled dispaying conversation context from clipboard or pipe',
         alias: 'd',
       },
     },
@@ -73,19 +163,30 @@ export default command(
     },
   },
   async (argv) => {
-    const { adapter, model, maxTokens, temperature, topP, disableContextDisplay } = argv.flags
+    const {
+      adapter,
+      model,
+      maxTokens,
+      temperature,
+      topP,
+      disableContextDisplay,
+    } = argv.flags
 
     if (temperature && (temperature < 0 || temperature > 1)) {
-      throw Error(`Allowed --temperature paramter value range is between 0.0 and 1.0 but given: ${temperature}`)
+      throw Error(
+        `Allowed --temperature paramter value range is between 0.0 and 1.0 but given: ${temperature}`
+      )
     }
 
     if (topP && (topP < 0 || topP > 1)) {
-      throw Error(`Allowed --topP paramter value range is between 0.0 and 1.0 but given: ${topP}`)
+      throw Error(
+        `Allowed --topP paramter value range is between 0.0 and 1.0 but given: ${topP}`
+      )
     }
 
-    const options: I.TextOptions = {
-      model: (model || DEFAULT_LLM) as I.TextModelId,
-      adapterId: adapter as I.TextAdapterId,
+    const options: unknown = {
+      model: model || DEFAULT_TEXT_MODEL,
+      adapterId: adapter,
       maxTokens: maxTokens,
       temperature: temperature,
       topP: topP,
@@ -95,7 +196,7 @@ export default command(
       const clipboardText = getClipboardText()
 
       if (clipboardText) {
-        const messages: I.TextUnit[] = [{ role: 'user', content: clipboardText }]
+        const messages: Message[] = [{ role: 'user', content: clipboardText }]
 
         if (!disableContextDisplay) displayConverstaionContext(messages)
         runCLIChat(options, messages)
@@ -105,7 +206,7 @@ export default command(
 
     if (getIsRunningInPipe()) {
       const messageFromPipe = await getCLIPipeMessege()
-      const messages: I.TextUnit[] = [{ role: 'user', content: messageFromPipe }]
+      const messages: Message[] = [{ role: 'user', content: messageFromPipe }]
 
       if (!disableContextDisplay) displayConverstaionContext(messages)
       runCLIChat(options, messages)
