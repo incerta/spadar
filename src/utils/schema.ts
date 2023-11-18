@@ -14,12 +14,6 @@ export type IOPrimitive = {
   key: string
 
   /**
-   * Present if `unitSchema` extends `ObjectUnitSchema` which will be
-   * `ObjectUnitSchema.type` but transformed to PascalCase
-   **/
-  unitId?: string
-
-  /**
    * Depends on `transferMethod` and `unitSchema`
    * it might be simple types: `string`, `Buffer`
    * or: `UnitId`, `StreamOf<UnitId>`, `UnitId[]`, `StreamOf<UnitId[]>
@@ -27,14 +21,14 @@ export type IOPrimitive = {
    **/
   ioUnitTypings: string
 
-  // TODO: seems like we require `unitTypings` only when
-  // `unitId` is present, we need to refactor the interface to reflect that
-  /**
-   * Result type of the `unitSchema` or `unitSchema[0]`
-   * so might be identical to `ioUnitTypings` if transfer method
-   * is static on both ends and it is not `[I.UnitSchema]` case
-   **/
-  unitTypings: string
+  /* Defined if `unitSchema` extends `ObjectUnitSchema` */
+  objectUnit?: {
+    /* `ObjectUnitSchema.id` transformed to PascalCase + 'Unit' suffix */
+    id: string
+
+    /* The content of type definitions file for the given `ObjectUnitSchema` */
+    typings: string
+  }
 }
 
 /**
@@ -52,7 +46,7 @@ export type AdapterAPIStructure = Record<
 export const STREAM_SUFFIX = 'Stream'
 export const ARRAY_SUFFIX = 'Arr'
 
-const REQUIRED_PROPERTY_SCHEMA = new Set<I.RequiredPropertySchema>([
+const REQUIRED_PROPERTY_SCHEMA = new Set<I.RequiredPayloadPropSchema>([
   'Buffer',
   'string',
   'number',
@@ -60,7 +54,7 @@ const REQUIRED_PROPERTY_SCHEMA = new Set<I.RequiredPropertySchema>([
 ])
 
 /* Transform `PropertySchema` to typings */
-export const propertyToType = (property: I.PropertySchema): string => {
+export const propertyToType = (property: I.PropSchema): string => {
   switch (property) {
     case 'Buffer':
     case 'string':
@@ -69,7 +63,7 @@ export const propertyToType = (property: I.PropertySchema): string => {
       return property
 
     default: {
-      if (property.type === 'literal') {
+      if (property.type === 'stringUnion') {
         if (typeof property.of === 'string') {
           return `'${property.of}'`
         }
@@ -96,10 +90,10 @@ export const unitSchemaToType = (unitSchema: I.UnitSchema) => {
       if (typeof propertySchema === 'string') {
         if (
           REQUIRED_PROPERTY_SCHEMA.has(
-            propertySchema as I.RequiredPropertySchema
+            propertySchema as I.RequiredPayloadPropSchema
           )
         ) {
-          return propertyToType(propertySchema as I.PropertySchema)
+          return propertyToType(propertySchema as I.PropSchema)
         }
 
         return `'${propertySchema}'`
@@ -108,12 +102,27 @@ export const unitSchemaToType = (unitSchema: I.UnitSchema) => {
       return propertyToType(propertySchema)
     })()
 
-    return `${key}: ${valueType}`
+    const optionalSymbol = ((): string => {
+      if (typeof propertySchema !== 'object') return ''
+      if (propertySchema.required) return ''
+
+      return '?'
+    })()
+
+    return `${key}${optionalSymbol}: ${valueType}`
   })
 
-  return `{
-  ${keyValuePair.join('\n  ')}
-}`
+  const unitId = camelCaseToPascalCase(unitSchema.id + 'Unit')
+
+  const result = dedent(`
+    export type ${unitId} = {
+      ${keyValuePair.join('\n      ')}
+    }
+
+    export default ${unitId}
+  `)
+
+  return result
 }
 
 /**
@@ -186,22 +195,26 @@ export const generateIOPrimitive = (
   })()
 
   const key = unitKey + suffix
-  const unitId =
-    typeof unitSchema === 'object'
-      ? camelCaseToPascalCase(unitKey) + 'Unit'
-      : undefined
+
+  const objectUnit = ((): { id: string; typings: string } | undefined => {
+    if (typeof unitSchema !== 'object' || Array.isArray(unitSchema)) {
+      return undefined
+    }
+
+    const id = camelCaseToPascalCase(unitKey) + 'Unit'
+    const typings = unitSchemaToType(unitSchema)
+
+    return { id, typings }
+  })()
 
   const unitTypings = unitSchemaToType(unitSchema)
+
   const ioUnitTypings = streamOfWrapper(
-    (unitId ? unitId : unitTypings) + (Array.isArray(ioUnitSchema) ? '[]' : '')
+    (objectUnit ? objectUnit.id : unitTypings) +
+      (Array.isArray(ioUnitSchema) ? '[]' : '')
   )
 
-  return {
-    key,
-    unitTypings,
-    unitId,
-    ioUnitTypings,
-  }
+  return { key, ioUnitTypings, objectUnit }
 }
 
 /**
@@ -212,14 +225,16 @@ export const getFunctionsAndUnits = (
   supportedIO: I.TransformationIOSchema[]
 ) => {
   return supportedIO.reduce<{
-    /* key: unit id, value: unit type*/
-    units: Record<string, string>
+    unitIds: Set<string>
+    units: Array<{ id: string; typings: string }>
     functions: Array<{
       transformation: I.Transformation
       inputKey: string
       outputKey: string
       fnType: string
     }>
+
+    // TODO: return also `debugAdapter` and `actualAdapter`
   }>(
     (acc, transformationSchema) => {
       const transferMethods = Object.keys(
@@ -256,14 +271,17 @@ export const getFunctionsAndUnits = (
           const primitives = [inputPrimitives, outputPrimitives]
 
           primitives.forEach((primitive) => {
-            if (!primitive.unitId) return
-            acc.units[primitive.unitId] = primitive.unitTypings
+            if (!primitive.objectUnit) return
+            if (acc.unitIds.has(primitive.objectUnit.id)) return
+            acc.unitIds.add(primitive.objectUnit.id)
+            acc.units.push(primitive.objectUnit)
           })
         })
       })
+
       return acc
     },
-    { units: {}, functions: [] }
+    { units: [], functions: [], unitIds: new Set() }
   )
 }
 
@@ -349,31 +367,13 @@ export const generateAPITypingsFromSchema = (
   >((acc, adapterSchema) => {
     const { units, functions } = getFunctionsAndUnits(adapterSchema.supportedIO)
 
-    const resultUnits: Array<{
-      id: string
-      adapterId: string
-      typings: string
-    }> = Object.keys(units).map((unitId) => {
-      const unitTypingsBody = units[unitId]
-      const typings = dedent(`
-        type ${unitId} = ${unitTypingsBody}\n
-        export default ${unitId}
-      `)
-
-      return {
-        id: unitId,
-        adapterId: adapterSchema.id,
-        typings: typings,
-      }
-    })
-
     const header = dedent(` 
       /**
        * The file is generated by SPADAR CLI v. ${config.version}
        * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
-       **/\n\n`)
+       **/`)
 
-    const unitIds = resultUnits.map((x) => x.id)
+    const unitIds = units.map((x) => x.id)
     const unitsImport = unitIds.length
       ? `import { ${unitIds.join(', ')} } from './units'`
       : ''
@@ -408,16 +408,15 @@ export const generateAPITypingsFromSchema = (
       optionsType,
       adapterAPITypings,
     ]
+      .filter((x) => !!x.trim())
       .join('\n\n')
       .trim()
-
-    console.log(adapterTypings)
 
     acc.push({
       adapterId: adapterSchema.id,
       adapterTypings: adapterTypings,
       apiStructure: structure,
-      units: resultUnits,
+      units: units.map((x) => ({ ...x, adapterId: adapterSchema.id })),
     })
 
     return acc

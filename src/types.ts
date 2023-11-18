@@ -1,7 +1,10 @@
 export type ModelId = string
 export type AdapterId = string
 
-type PropertySchemaBase<T> = {
+/**
+ * Each `ObjectPropSchema` extends `PropSchemaBase<T>`
+ **/
+type PropSchemaBase<T> = {
   description?: string
   required?: boolean
   default?: T
@@ -12,7 +15,7 @@ type PropertySchemaBase<T> = {
  *
  * result type: string
  **/
-export type StringPropertySchema = PropertySchemaBase<string> & {
+export type StringPropSchema = PropSchemaBase<string> & {
   type: 'string'
   minLength?: number /* >= */
   maxLength?: number /* <= */
@@ -23,7 +26,7 @@ export type StringPropertySchema = PropertySchemaBase<string> & {
  *
  * result type: number
  **/
-export type NumberPropertySchema = PropertySchemaBase<number> & {
+export type NumberPropSchema = PropSchemaBase<number> & {
   type: 'number'
   min?: number /* >= */
   max?: number /* <= */
@@ -34,7 +37,7 @@ export type NumberPropertySchema = PropertySchemaBase<number> & {
  *
  * result type: boolean
  **/
-export type BooleanPropertySchema = PropertySchemaBase<boolean> & {
+export type BooleanPropSchema = PropSchemaBase<boolean> & {
   type: 'boolean'
 }
 
@@ -43,7 +46,7 @@ export type BooleanPropertySchema = PropertySchemaBase<boolean> & {
  *
  * result type: Buffer
  **/
-export type BufferPropertySchema = PropertySchemaBase<Buffer> & {
+export type BufferPropSchema = PropSchemaBase<Buffer> & {
   type: 'Buffer'
   /* Buffer.length */
   minLength?: number /* >= */
@@ -58,28 +61,36 @@ export type BufferPropertySchema = PropertySchemaBase<Buffer> & {
  *
  * result type: 'one' | 'two'
  **/
-export type StringUnionPropertySchema = PropertySchemaBase<string> & {
-  type: 'literal'
+export type StringUnionPropSchema = PropSchemaBase<string> & {
+  type: 'stringUnion'
   of: Array<string>
 }
 
-export type PossibleOptionalPropertySchema =
-  | StringPropertySchema
-  | NumberPropertySchema
-  | BooleanPropertySchema
-  | BufferPropertySchema
-  | StringUnionPropertySchema
+export type ObjectPropSchema =
+  | StringPropSchema
+  | NumberPropSchema
+  | BooleanPropSchema
+  | BufferPropSchema
+  | StringUnionPropSchema
 
-export type RequiredPropertySchema =
-  | 'Buffer' /* required `BufferPropertySchema` */
-  | 'string' /* required `StringProperySchema` */
-  | 'number' /* required `NumberPropertySchema` */
-  | 'boolean' /* required `BooleanPropertySchema` */
-//  | Array<string> /* required `StringUnionPropertySchema` */
+export type RequiredPayloadPropSchema =
+  | 'Buffer'
+  | 'string'
+  | 'number'
+  | 'boolean'
 
-export type PropertySchema =
-  | PossibleOptionalPropertySchema
-  | RequiredPropertySchema
+// TODO: rename to `OptionalLiteralPropertySchema`
+export type OptionalPayloadPropSchema =
+  | '?Buffer'
+  | '?string'
+  | '?number'
+  | '?boolean'
+
+// TODO: Array<string> as required `StringUnionPropertySchema` */
+//       [string] as required `string` literal required `StringUnionPropertySchema`
+//       with only singular `of` memeber
+
+export type PropSchema = ObjectPropSchema | RequiredPayloadPropSchema
 
 // TODO: We could extend payload type
 //       on the public API to use URL's and file
@@ -113,7 +124,7 @@ export type PropertySchema =
 export type ObjectUnitSchema = {
   id: string
   payload: 'Buffer' | 'string'
-  [key: string]: PropertySchema | string
+  [key: string]: PropSchema | string
 }
 
 export type PayloadUnitSchema = 'string' | 'Buffer'
@@ -157,8 +168,8 @@ export type UnitSchema = ObjectUnitSchema | PayloadUnitSchema
  * streams chunks.
  **/
 export type ModelOptionsSchema = {
-  model: StringUnionPropertySchema & { required: true; of: string[] }
-  [key: string]: PropertySchema
+  model: StringUnionPropSchema & { required: true; of: string[] }
+  [key: string]: PropSchema
 }
 
 // TODO: Support Array<UnitSchema | [UnitSchema]>

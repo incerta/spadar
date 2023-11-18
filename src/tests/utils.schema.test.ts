@@ -3,24 +3,24 @@ import config from '../config'
 import * as schema from '../utils/schema'
 import * as I from '../types'
 
-describe('Utilities for schema -> typescript type transformation', () => {
-  it('propertyToType', () => {
-    expect(schema.propertyToType('string')).toBe('string')
-    expect(schema.propertyToType('number')).toBe('number')
-    expect(schema.propertyToType('boolean')).toBe('boolean')
-    expect(schema.propertyToType('Buffer')).toBe('Buffer')
-    expect(schema.propertyToType({ type: 'string' })).toBe('string')
-    expect(schema.propertyToType({ type: 'number' })).toBe('number')
-    expect(schema.propertyToType({ type: 'boolean' })).toBe('boolean')
-    expect(schema.propertyToType({ type: 'Buffer' })).toBe('Buffer')
-    expect(schema.propertyToType({ type: 'literal', of: ['literal'] })).toBe(
-      "'literal'"
-    )
-    expect(
-      schema.propertyToType({ type: 'literal', of: ['literal1', 'literal2'] })
-    ).toBe("'literal1' | 'literal2'")
-  })
+it('propertyToType: ', () => {
+  expect(schema.propertyToType('string')).toBe('string')
+  expect(schema.propertyToType('number')).toBe('number')
+  expect(schema.propertyToType('boolean')).toBe('boolean')
+  expect(schema.propertyToType('Buffer')).toBe('Buffer')
+  expect(schema.propertyToType({ type: 'string' })).toBe('string')
+  expect(schema.propertyToType({ type: 'number' })).toBe('number')
+  expect(schema.propertyToType({ type: 'boolean' })).toBe('boolean')
+  expect(schema.propertyToType({ type: 'Buffer' })).toBe('Buffer')
+  expect(schema.propertyToType({ type: 'stringUnion', of: ['literal'] })).toBe(
+    "'literal'"
+  )
+  expect(
+    schema.propertyToType({ type: 'stringUnion', of: ['literal1', 'literal2'] })
+  ).toBe("'literal1' | 'literal2'")
+})
 
+describe('Utilities for schema -> typescript type transformation', () => {
   describe('generateIOPrimitive', () => {
     it('staticInStaticOut', () => {
       const transferMethod: I.TransferMethod = 'staticInStaticOut'
@@ -31,7 +31,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'string',
         ioUnitTypings: 'string',
-        unitTypings: 'string',
       })
 
       /* Primitive unit output */
@@ -40,7 +39,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'string',
         ioUnitTypings: 'string',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema input */
@@ -49,7 +47,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArr',
         ioUnitTypings: 'string[]',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema output */
@@ -58,7 +55,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArr',
         ioUnitTypings: 'string[]',
-        unitTypings: 'string',
       })
 
       const customUnit: I.ObjectUnitSchema = {
@@ -72,8 +68,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit schema output */
@@ -82,8 +80,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema input */
@@ -92,8 +92,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customArr',
         ioUnitTypings: 'CustomUnit[]',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema output */
@@ -102,8 +104,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
     })
 
@@ -116,7 +120,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'string',
         ioUnitTypings: 'string',
-        unitTypings: 'string',
       })
 
       /* Primitive unit output */
@@ -125,7 +128,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringStream',
         ioUnitTypings: 'StreamOf<string>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema input */
@@ -134,7 +136,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArr',
         ioUnitTypings: 'string[]',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema output */
@@ -143,7 +144,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArrStream',
         ioUnitTypings: 'StreamOf<string[]>',
-        unitTypings: 'string',
       })
 
       const customUnit: I.ObjectUnitSchema = {
@@ -157,8 +157,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit schema output */
@@ -167,8 +169,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema input */
@@ -177,8 +181,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customArr',
         ioUnitTypings: 'CustomUnit[]',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema output */
@@ -187,8 +193,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
     })
 
@@ -201,7 +209,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringStream',
         ioUnitTypings: 'StreamOf<string>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit output */
@@ -210,7 +217,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'string',
         ioUnitTypings: 'string',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema input */
@@ -219,7 +225,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArrStream',
         ioUnitTypings: 'StreamOf<string[]>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema output */
@@ -228,7 +233,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArr',
         ioUnitTypings: 'string[]',
-        unitTypings: 'string',
       })
 
       const customUnit: I.ObjectUnitSchema = {
@@ -242,8 +246,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit schema output */
@@ -252,8 +258,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema input */
@@ -262,8 +270,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customArrStream',
         ioUnitTypings: 'StreamOf<CustomUnit[]>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema output */
@@ -272,8 +282,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'custom',
         ioUnitTypings: 'CustomUnit',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
     })
 
@@ -286,7 +298,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringStream',
         ioUnitTypings: 'StreamOf<string>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit output */
@@ -295,7 +306,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringStream',
         ioUnitTypings: 'StreamOf<string>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema input */
@@ -304,7 +314,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArrStream',
         ioUnitTypings: 'StreamOf<string[]>',
-        unitTypings: 'string',
       })
 
       /* Primitive unit array schema output */
@@ -313,7 +322,6 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'stringArrStream',
         ioUnitTypings: 'StreamOf<string[]>',
-        unitTypings: 'string',
       })
 
       const customUnit: I.ObjectUnitSchema = {
@@ -327,8 +335,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit schema output */
@@ -337,8 +347,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema input */
@@ -347,8 +359,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customArrStream',
         ioUnitTypings: 'StreamOf<CustomUnit[]>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
 
       /* Custom unit array schema output */
@@ -357,32 +371,89 @@ describe('Utilities for schema -> typescript type transformation', () => {
       ).toEqual({
         key: 'customStream',
         ioUnitTypings: 'StreamOf<CustomUnit>',
-        unitId: 'CustomUnit',
-        unitTypings: `{\n  id: 'custom'\n  payload: string\n}`,
+        objectUnit: {
+          id: 'CustomUnit',
+          typings: expect.any(String),
+        },
       })
     })
-  })
+  }) /* END: generateIOPrimitive */
 
   it('unitSchemaToType', () => {
-    const expected = schema.unitSchemaToType({
-      id: 'unitType',
+    const customUnit: I.ObjectUnitSchema = {
+      /* `id: 'custom'` -> CustomUnit */
+      id: 'custom',
+      /* `payload: string` */
       payload: 'string',
-      bufferProperty: 'Buffer',
-      stringProperty: 'string',
-      booleanProperty: 'boolean',
-      numberProperty: 'number',
-    })
+      /* `stringPropertySchemaRequired: string` */
+      stringPropertySchemaRequired: {
+        type: 'string',
+        required: true,
+      },
+      /* `stringPropertySchemaOptional?: string` */
+      stringPropertySchemaOptional: {
+        type: 'string',
+      },
+      /* `numberPropertySchemaRequired: number` */
+      numberPropertySchemaRequired: {
+        type: 'number',
+        required: true,
+      },
+      /* `numberPropertySchemaOptional?: number` */
+      numberPropertySchemaOptional: {
+        type: 'number',
+      },
+      /* `booleanPropertyRequired: boolean` */
+      booleanPropertyRequired: {
+        type: 'boolean',
+        required: true,
+      },
+      /* `booleanPropertyOptional?: boolean` */
+      booleanPropertyOptional: {
+        type: 'boolean',
+      },
+      /* `bufferPropertySchemaRequired: Buffer` */
+      bufferPropertySchemaRequired: {
+        type: 'Buffer',
+        required: true,
+      },
+      /* `bufferPropertySchemaOptional?: Buffer` */
+      bufferPropertySchemaOptional: {
+        type: 'Buffer',
+      },
+      /* `requiredBuffer: Buffer` */
+      requiredBuffer: 'Buffer',
+      /* `requiredString: string` */
+      requiredString: 'string',
+      /* `requiredNumber: number` */
+      requiredNumber: 'number',
+      /* `requiredBoolean: boolean` */
+      requiredBoolean: 'boolean',
+    }
 
-    expect(expected).toBe(
-      dedent(`{
-      id: 'unitType'
-      payload: string
-      bufferProperty: Buffer
-      stringProperty: string
-      booleanProperty: boolean
-      numberProperty: number
-    }`)
-    )
+    const expectedTypings = dedent(`
+      export type CustomUnit = {
+        id: 'custom'
+        payload: string
+        stringPropertySchemaRequired: string
+        stringPropertySchemaOptional?: string
+        numberPropertySchemaRequired: number
+        numberPropertySchemaOptional?: number
+        booleanPropertyRequired: boolean
+        booleanPropertyOptional?: boolean
+        bufferPropertySchemaRequired: Buffer
+        bufferPropertySchemaOptional?: Buffer
+        requiredBuffer: Buffer
+        requiredString: string
+        requiredNumber: number
+        requiredBoolean: boolean
+      }
+      
+      export default CustomUnit`)
+
+    const result = schema.unitSchemaToType(customUnit)
+
+    expect(result).toBe(expectedTypings)
   })
 
   it('getIOPropertyKey', () => {
@@ -404,10 +475,10 @@ describe('Utilities for schema -> typescript type transformation', () => {
         },
       ])
     ).toBe('unitType')
-  })
+  }) /* END: getIOPropertyKey */
 
   describe('generateAPIFromSchema', () => {
-    it.only('PayloadUnitSchema: string | buffer', () => {
+    it('PayloadUnitSchema: string | Buffer', () => {
       const [api] = schema.generateAPITypingsFromSchema([
         {
           id: 'testAdapter',
@@ -415,7 +486,11 @@ describe('Utilities for schema -> typescript type transformation', () => {
           options: {
             // TODO: use just `['gpt-4', 'gpt-3']` when `Array<string>`
             //       type is implemented as `RequiredPropertySchema`
-            model: { type: 'literal', of: ['gpt-4', 'gpt-3'], required: true },
+            model: {
+              type: 'stringUnion',
+              of: ['gpt-4', 'gpt-3'],
+              required: true,
+            },
           },
           secrets: [{ key: 'OPENAI_API_KEY' }],
           supportedIO: [
@@ -449,19 +524,159 @@ describe('Utilities for schema -> typescript type transformation', () => {
         export type AdapterAPI = {
           textToText: {
             string: {
+              /* string -> string;  */
               string: (secrets: Secrets, options: Options, unit: string) => Promise<string>
-              stringStream: (secrets: Secrets, options: Options, unit: string) => Promise<StreamOf<string>>
+            }
+            buffer: {
+              /* buffer -> stringStream;  */
+              stringStream: (secrets: Secrets, options: Options, unit: Buffer) => Promise<StreamOf<string>>
             }
             stringStream: {
+              /* stringStream -> string;  */
               string: (secrets: Secrets, options: Options, unit: StreamOf<string>) => Promise<string>
-              stringStream: (secrets: Secrets, options: Options, unit: StreamOf<string>) => Promise<StreamOf<string>>
+            }
+            bufferStream: {
+              /* bufferStream -> stringStream;  */
+              stringStream: (secrets: Secrets, options: Options, unit: StreamOf<Buffer>) => Promise<StreamOf<string>>
             }
           }
         }
         
         export default AdapterAPI`)
 
-      //      expect(api.adapterTypings).toBe(expected)
+      expect(api.adapterTypings).toBe(expected)
+    }) /* END: PayloadUnitSchema: string | buffer */
+
+    it('PayloadUnitSchema: ObjectUnitSchema', () => {
+      const customUnitOne: I.ObjectUnitSchema = {
+        /* `id: 'customOne'` */
+        id: 'customOne',
+        /* `payload: string` */
+        payload: 'string',
+      }
+
+      const customUnitTwo: I.ObjectUnitSchema = {
+        id: 'customTwo',
+        payload: 'Buffer',
+      }
+
+      const adapterId = 'testAdapter'
+
+      const [api] = schema.generateAPITypingsFromSchema([
+        {
+          id: adapterId,
+          description: 'Test adapter',
+          options: {
+            model: {
+              type: 'stringUnion',
+              of: ['gpt-4', 'gpt-3'],
+              required: true,
+            },
+          },
+          secrets: [{ key: 'OPENAI_API_KEY' }],
+          supportedIO: [
+            {
+              type: 'textToText',
+              io: {
+                staticInStaticOut: [
+                  [customUnitOne, customUnitOne],
+                  [customUnitOne, customUnitTwo],
+                  [customUnitTwo, customUnitOne],
+                  [customUnitTwo, customUnitTwo],
+                  [[customUnitOne], customUnitOne],
+                  [customUnitOne, [customUnitOne]],
+                  [[customUnitOne], [customUnitOne]],
+                ],
+                staticInStreamOut: [[customUnitOne, customUnitOne]],
+                streamInStaticOut: [[customUnitOne, customUnitOne]],
+                streamInStreamOut: [[customUnitOne, customUnitOne]],
+              },
+            },
+          ],
+        },
+      ])
+
+      const expectedAdapterTypings = dedent(`
+        /**
+         * The file is generated by SPADAR CLI v. 0.1.0
+         * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
+         **/
+
+        import { CustomOneUnit, CustomTwoUnit } from './units'
+
+        export type Secrets = {
+          OPENAI_API_KEY: string
+        }
+
+        export type Options = {
+          model: 'gpt-4' | 'gpt-3'
+        }
+
+        export type AdapterAPI = {
+          textToText: {
+            customOne: {
+              /* customOne -> customOne;  */
+              customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit>
+              /* customOne -> customTwo;  */
+              customTwo: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomTwoUnit>
+              /* customOne -> customOneArr;  */
+              customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit[]>
+              /* customOne -> customOneStream;  */
+              customOneStream: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<StreamOf<CustomOneUnit>>
+            }
+            customTwo: {
+              /* customTwo -> customOne;  */
+              customOne: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomOneUnit>
+              /* customTwo -> customTwo;  */
+              customTwo: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomTwoUnit>
+            }
+            customOneArr: {
+              /* customOneArr -> customOne;  */
+              customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit>
+              /* customOneArr -> customOneArr;  */
+              customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit[]>
+            }
+            customOneStream: {
+              /* customOneStream -> customOne;  */
+              customOne: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<CustomOneUnit>
+              /* customOneStream -> customOneStream;  */
+              customOneStream: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<StreamOf<CustomOneUnit>>
+            }
+          }
+        }
+
+        export default AdapterAPI
+      `)
+
+      expect(api.adapterTypings).toBe(expectedAdapterTypings)
+
+      const [unitOne, unitTwo] = api.units
+
+      expect(unitOne.id).toBe('CustomOneUnit')
+      expect(unitOne.adapterId).toBe(adapterId)
+      expect(unitOne.typings).toBe(
+        dedent(`
+        export type CustomOneUnit = {
+          id: 'customOne'
+          payload: string
+        }
+        
+        export default CustomOneUnit
+       `)
+      )
+
+      expect(unitTwo.id).toBe('CustomTwoUnit')
+      expect(unitTwo.adapterId).toBe(adapterId)
+      expect(unitTwo.typings).toBe(
+        dedent(`
+        export type CustomTwoUnit = {
+          id: 'customTwo'
+          payload: Buffer
+        }
+        
+        export default CustomTwoUnit
+       `)
+      )
     })
-  })
-})
+  }) /* END: generateAPIFromSchema */
+}) /* END: Utilities for schema -> typescript type transformation */
