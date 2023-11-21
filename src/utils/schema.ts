@@ -316,10 +316,13 @@ export const getConnectorFiles = (
   }, {})
 
   let connectorTypingsTail = 'export type Connector = {'
-  let connectorSignature = dedent(`
-    import Connector from './${schema.id}.signature.ts'
-    
-    export connector: Connector = {
+  let connectorSignature =
+    GENERATED_FILE_HEAD_COMMENT +
+    '\n\n' +
+    dedent(`
+      import Connector from './${toKebabCase(schema.id)}.typings'
+      
+      export const connector: Connector = {
   `)
 
   const signatureWriter = (x: string) => {
@@ -338,7 +341,9 @@ export const getConnectorFiles = (
         const comment = `/* ${inputKey} -> ${outputKey};  */`
 
         signatureWriter(`\n      ${comment}`)
-        signatureWriter(`\n      ${outputKey}: ${fnType}`)
+
+        connectorTypingsTail += `\n      ${outputKey}: ${fnType}`
+        connectorSignature += `\n      ${outputKey}: () => throw new Error('Not implemented')`
       })
 
       signatureWriter(`\n    }`)
@@ -349,6 +354,7 @@ export const getConnectorFiles = (
   signatureWriter('\n}')
 
   connectorTypingsTail += '\n\nexport default Connector'
+  connectorSignature += '\n\nexport default connector'
 
   const optionsPropList = Object.keys(schema.options).map((key) => {
     return `${key}: ${propertyToType(schema.options[key])}`
@@ -386,7 +392,11 @@ export const getConnectorFiles = (
       filePath: config.adapter.connectorTypingsFilePath(schema.id),
       body: connectorTypings,
     },
-    signature: { filePath: '', body: connectorSignature },
+    signature: {
+      filePath: config.adapter.connectorSignaturePath(schema.id),
+      body: connectorSignature,
+    },
+    // FIXME: implement connector
     connector: { filePath: '', body: '' },
   }
 }
