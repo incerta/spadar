@@ -24,12 +24,16 @@ type ConnectorFunction = {
    * @example 'chatMessage'
    **/
   inputKey: string
+  outputKey: string
+
   /**
    * @example 'string'
-   * @example 'number'
-   * @example 'chatMessage'
+   * @example 'string[]'
+   * @example 'StreamOf<string[]>'
+   * @example 'ChatMessage'
    **/
-  outputKey: string
+  inputType: string
+  outputType: string
 
   /**
    * @example '(keys: Keys, options: Options, unit: string) => StreamOf<ChatMessage>'
@@ -277,6 +281,8 @@ export const getFunctionsAndUnits = (
             transformation: transformationSchema.type,
             inputKey: inputUnit.key,
             outputKey: outputUnit.key,
+            inputType: inputUnit.typings,
+            outputType: inputUnit.typings,
             fnType,
           })
 
@@ -304,6 +310,19 @@ export const getConnectorFiles = (
   [k in 'connector' | 'signature' | 'typings']: AdapterModuleFile
 } => {
   const { unitTypings, functions } = getFunctionsAndUnits(schema.supportedIO)
+
+  const connectorLines = [
+    `import signature from './${toKebabCase(schema.id)}.signature'`,
+  ]
+
+  functions.forEach((fn) => {
+    const resultFn = `signature.${fn.transformation}.${fn.inputKey}.${fn.outputKey} = async (keys, options, unit) => {}`
+    connectorLines.push(resultFn)
+  })
+
+  connectorLines.push('export default signature')
+
+  const connector = connectorLines.join('\n\n')
 
   const structure = functions.reduce<ConnectorTypingsStructure>((acc, fn) => {
     acc[fn.transformation] = acc[fn.transformation] || {}
@@ -396,8 +415,10 @@ export const getConnectorFiles = (
       filePath: config.adapter.connectorSignaturePath(schema.id),
       body: connectorSignature,
     },
-    // FIXME: implement connector
-    connector: { filePath: '', body: '' },
+    connector: {
+      filePath: config.adapter.connectorFilePath(schema.id),
+      body: connector,
+    },
   }
 }
 
