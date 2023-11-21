@@ -30,7 +30,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'string',
-      ioUnitTypings: 'string',
+      typings: 'string',
     }
   )
 
@@ -39,7 +39,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'string',
-    ioUnitTypings: 'string',
+    typings: 'string',
   })
 
   /* Primitive unit array schema input */
@@ -47,7 +47,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArr',
-    ioUnitTypings: 'string[]',
+    typings: 'string[]',
   })
 
   /* Primitive unit array schema output */
@@ -55,7 +55,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArr',
-    ioUnitTypings: 'string[]',
+    typings: 'string[]',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -68,7 +68,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -80,7 +80,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -92,7 +92,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArr',
-    ioUnitTypings: 'CustomUnit[]',
+    typings: 'CustomUnit[]',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -104,7 +104,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -119,7 +119,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'string',
-      ioUnitTypings: 'string',
+      typings: 'string',
     }
   )
 
@@ -128,7 +128,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'stringStream',
-    ioUnitTypings: 'StreamOf<string>',
+    typings: 'StreamOf<string>',
   })
 
   /* Primitive unit array schema input */
@@ -136,7 +136,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArr',
-    ioUnitTypings: 'string[]',
+    typings: 'string[]',
   })
 
   /* Primitive unit array schema output */
@@ -144,7 +144,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    ioUnitTypings: 'StreamOf<string[]>',
+    typings: 'StreamOf<string[]>',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -157,7 +157,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -169,7 +169,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -181,7 +181,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArr',
-    ioUnitTypings: 'CustomUnit[]',
+    typings: 'CustomUnit[]',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -193,7 +193,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -208,7 +208,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'stringStream',
-      ioUnitTypings: 'StreamOf<string>',
+      typings: 'StreamOf<string>',
     }
   )
 
@@ -217,7 +217,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'string',
-    ioUnitTypings: 'string',
+    typings: 'string',
   })
 
   /* Primitive unit array schema input */
@@ -225,7 +225,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    ioUnitTypings: 'StreamOf<string[]>',
+    typings: 'StreamOf<string[]>',
   })
 
   /* Primitive unit array schema output */
@@ -233,7 +233,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArr',
-    ioUnitTypings: 'string[]',
+    typings: 'string[]',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -246,7 +246,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -258,7 +258,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -270,7 +270,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArrStream',
-    ioUnitTypings: 'StreamOf<CustomUnit[]>',
+    typings: 'StreamOf<CustomUnit[]>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -282,7 +282,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'custom',
-    ioUnitTypings: 'CustomUnit',
+    typings: 'CustomUnit',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -297,7 +297,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'stringStream',
-      ioUnitTypings: 'StreamOf<string>',
+      typings: 'StreamOf<string>',
     }
   )
 
@@ -306,7 +306,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'stringStream',
-    ioUnitTypings: 'StreamOf<string>',
+    typings: 'StreamOf<string>',
   })
 
   /* Primitive unit array schema input */
@@ -314,7 +314,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    ioUnitTypings: 'StreamOf<string[]>',
+    typings: 'StreamOf<string[]>',
   })
 
   /* Primitive unit array schema output */
@@ -322,7 +322,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    ioUnitTypings: 'StreamOf<string[]>',
+    typings: 'StreamOf<string[]>',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -335,7 +335,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -347,7 +347,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -359,7 +359,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArrStream',
-    ioUnitTypings: 'StreamOf<CustomUnit[]>',
+    typings: 'StreamOf<CustomUnit[]>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -371,7 +371,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    ioUnitTypings: 'StreamOf<CustomUnit>',
+    typings: 'StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -435,47 +435,48 @@ it('unitSchemaToType: test all possilbe property types', () => {
         requiredNumber: number
         requiredBoolean: boolean
       }
-      
-      export default CustomUnit
   `)
   )
 })
 
-it('generateAPIFromSchema: supportedIO > ConnectorAPI', () => {
-  const [api] = schema.generateAPITypingsFromSchema([
-    {
-      id: 'testAdapter',
-      description: 'Test adapter',
-      options: {
-        model: {
-          type: 'stringUnion',
-          of: ['gpt-4', 'gpt-3'],
-          required: true,
+// TODO: should be 'schema with `RequiredPayloadPropSchema` units'
+it(`getConnectorFiles.typings: schema with 'Buffer' and 'string' units`, () => {
+  const { typings } = schema.getConnectorFiles({
+    id: 'testAdapter',
+    description: 'Test adapter',
+    options: {
+      model: {
+        type: 'stringUnion',
+        of: ['gpt-4', 'gpt-3'],
+        required: true,
+      },
+    },
+    keys: [{ key: 'OPENAI_API_KEY' }],
+    supportedIO: [
+      {
+        type: 'textToText',
+        io: {
+          staticInStaticOut: [['string', 'string']],
+          staticInStreamOut: [['Buffer', 'string']],
+          streamInStaticOut: [['string', 'string']],
+          streamInStreamOut: [['Buffer', 'string']],
         },
       },
-      keys: [{ key: 'OPENAI_API_KEY' }],
-      supportedIO: [
-        {
-          type: 'textToText',
-          io: {
-            staticInStaticOut: [['string', 'string']],
-            staticInStreamOut: [['Buffer', 'string']],
-            streamInStaticOut: [['string', 'string']],
-            streamInStreamOut: [['Buffer', 'string']],
-          },
-        },
-      ],
-    },
-  ])
+    ],
+  })
 
-  expect(api.adapterTypings).toBe(
+  expect(typings.filePath).toBe(
+    config.adapter.connectorTypingsFilePath('testAdapter')
+  )
+
+  expect(typings.body).toBe(
     dedent(`
     /**
      * The file is generated by SPADAR CLI v. ${config.version}
      * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
      **/
 
-    export type Secrets = {
+    export type Keys = {
       OPENAI_API_KEY: string
     }
 
@@ -483,7 +484,7 @@ it('generateAPIFromSchema: supportedIO > ConnectorAPI', () => {
       model: 'gpt-4' | 'gpt-3'
     }
 
-    export type AdapterAPI = {
+    export type Connector = {
       textToText: {
         string: {
           /* string -> string;  */
@@ -504,11 +505,11 @@ it('generateAPIFromSchema: supportedIO > ConnectorAPI', () => {
       }
     }
     
-    export default AdapterAPI`)
+    export default Connector`)
   )
 })
 
-it('generateAPIFromSchema: ObjectUnitSchema check', () => {
+it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
   const customUnitOne: I.ObjectUnitSchema = {
     /* `id: 'customOne'` */
     id: 'customOne',
@@ -523,119 +524,97 @@ it('generateAPIFromSchema: ObjectUnitSchema check', () => {
 
   const connectorId = 'testAdapter'
 
-  const [adapter] = schema.generateAPITypingsFromSchema([
-    {
-      id: connectorId,
-      description: 'Test adapter',
-      options: {
-        model: {
-          type: 'stringUnion',
-          of: ['gpt-4', 'gpt-3'],
-          required: true,
+  const { typings } = schema.getConnectorFiles({
+    id: connectorId,
+    description: 'Test adapter',
+    options: {
+      model: {
+        type: 'stringUnion',
+        of: ['gpt-4', 'gpt-3'],
+        required: true,
+      },
+    },
+    keys: [{ key: 'OPENAI_API_KEY' }],
+    supportedIO: [
+      {
+        type: 'textToText',
+        io: {
+          staticInStaticOut: [
+            [customUnitOne, customUnitOne],
+            [customUnitOne, customUnitTwo],
+            [customUnitTwo, customUnitOne],
+            [customUnitTwo, customUnitTwo],
+            [[customUnitOne], customUnitOne],
+            [customUnitOne, [customUnitOne]],
+            [[customUnitOne], [customUnitOne]],
+          ],
+          staticInStreamOut: [[customUnitOne, customUnitOne]],
+          streamInStaticOut: [[customUnitOne, customUnitOne]],
+          streamInStreamOut: [[customUnitOne, customUnitOne]],
         },
       },
-      keys: [{ key: 'OPENAI_API_KEY' }],
-      supportedIO: [
-        {
-          type: 'textToText',
-          io: {
-            staticInStaticOut: [
-              [customUnitOne, customUnitOne],
-              [customUnitOne, customUnitTwo],
-              [customUnitTwo, customUnitOne],
-              [customUnitTwo, customUnitTwo],
-              [[customUnitOne], customUnitOne],
-              [customUnitOne, [customUnitOne]],
-              [[customUnitOne], [customUnitOne]],
-            ],
-            staticInStreamOut: [[customUnitOne, customUnitOne]],
-            streamInStaticOut: [[customUnitOne, customUnitOne]],
-            streamInStreamOut: [[customUnitOne, customUnitOne]],
-          },
-        },
-      ],
-    },
-  ])
+    ],
+  })
 
-  const expectedAdapterTypings = dedent(`
-    /**
-     * The file is generated by SPADAR CLI v. 0.1.0
-     * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
-     **/
+  expect(typings.body).toBe(
+    dedent(`
+      /**
+       * The file is generated by SPADAR CLI v. 0.1.0
+       * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
+       **/
 
-    import { CustomOneUnit, CustomTwoUnit } from './units'
+      export type Keys = {
+        OPENAI_API_KEY: string
+      }
 
-    export type Secrets = {
-      OPENAI_API_KEY: string
-    }
+      export type Options = {
+        model: 'gpt-4' | 'gpt-3'
+      }
 
-    export type Options = {
-      model: 'gpt-4' | 'gpt-3'
-    }
+      export type CustomOneUnit = {
+        id: 'customOne'
+        payload: string
+      }
 
-    export type AdapterAPI = {
-      textToText: {
-        customOne: {
-          /* customOne -> customOne;  */
-          customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit>
-          /* customOne -> customTwo;  */
-          customTwo: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomTwoUnit>
-          /* customOne -> customOneArr;  */
-          customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit[]>
-          /* customOne -> customOneStream;  */
-          customOneStream: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<StreamOf<CustomOneUnit>>
-        }
-        customTwo: {
-          /* customTwo -> customOne;  */
-          customOne: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomOneUnit>
-          /* customTwo -> customTwo;  */
-          customTwo: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomTwoUnit>
-        }
-        customOneArr: {
-          /* customOneArr -> customOne;  */
-          customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit>
-          /* customOneArr -> customOneArr;  */
-          customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit[]>
-        }
-        customOneStream: {
-          /* customOneStream -> customOne;  */
-          customOne: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<CustomOneUnit>
-          /* customOneStream -> customOneStream;  */
-          customOneStream: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<StreamOf<CustomOneUnit>>
+      export type CustomTwoUnit = {
+        id: 'customTwo'
+        payload: Buffer
+      }
+
+      export type Connector = {
+        textToText: {
+          customOne: {
+            /* customOne -> customOne;  */
+            customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit>
+            /* customOne -> customTwo;  */
+            customTwo: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomTwoUnit>
+            /* customOne -> customOneArr;  */
+            customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit[]>
+            /* customOne -> customOneStream;  */
+            customOneStream: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<StreamOf<CustomOneUnit>>
+          }
+          customTwo: {
+            /* customTwo -> customOne;  */
+            customOne: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomOneUnit>
+            /* customTwo -> customTwo;  */
+            customTwo: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomTwoUnit>
+          }
+          customOneArr: {
+            /* customOneArr -> customOne;  */
+            customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit>
+            /* customOneArr -> customOneArr;  */
+            customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit[]>
+          }
+          customOneStream: {
+            /* customOneStream -> customOne;  */
+            customOne: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<CustomOneUnit>
+            /* customOneStream -> customOneStream;  */
+            customOneStream: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<StreamOf<CustomOneUnit>>
+          }
         }
       }
-    }
 
-    export default AdapterAPI
+      export default Connector
   `)
-
-  expect(adapter.adapterTypings).toBe(expectedAdapterTypings)
-
-  const [unitOne, unitTwo] = adapter.units
-
-  expect(unitOne.id).toBe('CustomOneUnit')
-  expect(unitOne.connectorId).toBe(connectorId)
-  expect(unitOne.typings).toBe(
-    dedent(`
-        export type CustomOneUnit = {
-          id: 'customOne'
-          payload: string
-        }
-        
-        export default CustomOneUnit
-       `)
-  )
-
-  expect(unitTwo.id).toBe('CustomTwoUnit')
-  expect(unitTwo.connectorId).toBe(connectorId)
-  expect(unitTwo.typings).toBe(
-    dedent(`
-        export type CustomTwoUnit = {
-          id: 'customTwo'
-          payload: Buffer
-        }
-        
-        export default CustomTwoUnit
-       `)
   )
 })
