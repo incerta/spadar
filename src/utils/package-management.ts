@@ -1,7 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 
-export function mapModulePackageFiles(cb: (pkg: Record<string, unknown>) => void, dir = process.cwd()) {
+export function mapModulePackageFiles(
+  cb: (pkg: Record<string, unknown>) => void,
+  dir = process.cwd()
+) {
   fs.readdir(dir, { withFileTypes: true }, (err, files) => {
     if (err) {
       console.error(`Failed to read directory: ${dir}`)
@@ -11,7 +14,8 @@ export function mapModulePackageFiles(cb: (pkg: Record<string, unknown>) => void
     files.forEach((file) => {
       const fullPath = path.join(dir, file.name)
 
-      const isNodeModulesDirectory = file.isDirectory() && file.name !== 'node_modules'
+      const isNodeModulesDirectory =
+        file.isDirectory() && file.name !== 'node_modules'
 
       if (isNodeModulesDirectory) {
         mapModulePackageFiles(cb, fullPath)

@@ -18,19 +18,19 @@ export default command(
         type: Boolean,
         description: dedent(`
             If current directory is an ADAPTER path generate/regenrate typings 
-            from "${config.adapterModule.schemaFilePath}" file`),
+            from "${config.adapter.schemaFilePath}" file`),
       },
     },
   },
   async (argv) => {
     if (argv.flags.schemaToType) {
       const shemaFilePath = getAdapterModuleAbsolutePath(
-        config.adapterModule.schemaFilePath
+        config.adapter.schemaFilePath
       )
 
       if (!shemaFilePath) return
 
-      const schema = require(shemaFilePath).default as I.AdapterSchema[]
+      const schema = require(shemaFilePath).default as I.ConnectorSchema[]
       const apiTypings = generateAPITypingsFromSchema(schema)
 
       console.log(JSON.stringify(apiTypings))

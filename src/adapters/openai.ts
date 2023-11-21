@@ -1,9 +1,9 @@
-// TODO: move the adapter to separate module
+// FIXME: remove the schema from SPADAR source
 import * as I from '../types'
 
 const optionsSchema: I.ModelOptionsSchema = {
   model: {
-    type: 'literal',
+    type: 'stringUnion',
     required: true,
     of: [
       'gpt-4',
@@ -44,21 +44,21 @@ const optionsSchema: I.ModelOptionsSchema = {
 export const chatMessageUnit: I.UnitSchema = {
   id: 'chatMessage',
   role: {
-    type: 'literal',
+    type: 'stringUnion',
     of: ['system', 'assistant', 'user'],
     required: true,
   },
   payload: 'string',
 }
 
-const adapterSchema: I.AdapterSchema = {
+const connectorSchema: I.ConnectorSchema = {
   id: 'spadar-OpenAI-textToText',
-  description: 'CLI and CHAT compatible adapter for OpenAI LLMs',
+  description: 'CLI and CHAT compatible adapter connector for OpenAI LLMs',
   options: optionsSchema,
-  secrets: [
+  keys: [
     {
       key: 'OPENAI_API_KEY',
-      howToGet: 'https://www.google.com/search?q=how+to+get+openai',
+      description: 'https://www.google.com/search?q=how+to+get+openai',
     },
   ],
   supportedIO: [
@@ -72,4 +72,4 @@ const adapterSchema: I.AdapterSchema = {
   ],
 }
 
-export default adapterSchema
+export default connectorSchema

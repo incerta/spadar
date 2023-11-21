@@ -3,7 +3,8 @@ import config from '../../config'
 import { DEFAULT_IMAGE_MODEL } from '../../constants'
 import * as I from '../../types'
 
-const ADAPTER_ID = 'OpenAI-LIM-spadar-built-in-image-adapter' as I.ImageAdapterId
+const ADAPTER_ID =
+  'OpenAI-LIM-spadar-built-in-image-adapter' as I.ImageconnectorId
 const SUPPORTED_MODELS = new Set([DEFAULT_IMAGE_MODEL]) as Set<I.ImageModelId>
 
 const openAI = new OpenAI({ apiKey: config.openAI.apiKey })

@@ -1,18 +1,26 @@
 import { PassThrough } from 'stream'
-import { DEFAULT_TEXT_MODEL } from '../../constants'
 
 import * as I from '../../types'
 
-const ADAPTER_ID = 'Debug-adapter' as I.TextAdapterId
-const SUPPORTED_MODELS = new Set([DEFAULT_TEXT_MODEL]) as Set<I.TextModelId>
+const ADAPTER_ID = 'Debug-adapter' as I.TextconnectorId
+const SUPPORTED_MODELS = new Set(['gpt-4']) as Set<I.TextModelId>
 
-const requestAnswer = async (options: I.TextOptions, messages: I.TextUnit[]) => {
+const requestAnswer = async (
+  options: I.TextOptions,
+  messages: I.TextUnit[]
+) => {
   console.log('Answer requested:\n', JSON.stringify({ options, messages }))
   return 'DEBUG_MOCKED_MESSAGE'
 }
 
-const requestAnswerStream = async (options: I.TextOptions, messages: I.TextUnit[]) => {
-  console.log('Answer stream requested:\n', JSON.stringify({ options, messages }))
+const requestAnswerStream = async (
+  options: I.TextOptions,
+  messages: I.TextUnit[]
+) => {
+  console.log(
+    'Answer stream requested:\n',
+    JSON.stringify({ options, messages })
+  )
 
   const modifiedStream = new PassThrough()
 
@@ -44,7 +52,8 @@ const requestAnswerStream = async (options: I.TextOptions, messages: I.TextUnit[
 const adapter: I.TextAdapter = {
   id: ADAPTER_ID,
   type: 'LLM',
-  description: 'Adapter that not doing any network requests but mocks the behaviour',
+  description:
+    'Adapter that not doing any network requests but mocks the behaviour',
   for: SUPPORTED_MODELS,
 
   chatToChat: async (chat) => {

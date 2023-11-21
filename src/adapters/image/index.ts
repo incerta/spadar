@@ -18,14 +18,14 @@ export const selectTextAdapter = (() => {
 
   const allAdapters = [...externalAdapters, ...BUILT_IN_IMAGE_ADAPTERS]
 
-  const byId = new Map<I.TextAdapterId, I.TextAdapter>()
+  const byId = new Map<I.TextconnectorId, I.TextAdapter>()
   const byModelId = new Map<I.TextModelId, I.TextAdapter>()
 
   const supportedModelIdSet = new Set<I.TextModelId>()
-  const supportedAdapterIdSet = new Set<I.TextAdapterId>()
+  const supportedconnectorIdSet = new Set<I.TextconnectorId>()
 
   allAdapters.forEach((adapter) => {
-    supportedAdapterIdSet.add(adapter.id)
+    supportedconnectorIdSet.add(adapter.id)
     byId.set(adapter.id, adapter)
 
     adapter.for.forEach((model) => {
@@ -34,8 +34,12 @@ export const selectTextAdapter = (() => {
     })
   })
 
-  const supportedModelsMessage = getFormattedMessage('Supported models:', [...supportedModelIdSet])
-  const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [...supportedAdapterIdSet])
+  const supportedModelsMessage = getFormattedMessage('Supported models:', [
+    ...supportedModelIdSet,
+  ])
+  const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [
+    ...supportedconnectorIdSet,
+  ])
 
   return { byId, byModelId, supportedModelsMessage, availableAdaptersMessage }
 })()

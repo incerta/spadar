@@ -16,14 +16,14 @@ export const selectLLMAdapter = (() => {
 
   const allLLMAdapters = [...externalLLMAdapters, ...BUILT_IN_LLM_ADAPTERS]
 
-  const byId = new Map<I.TextAdapterId, I.TextAdapter>()
+  const byId = new Map<I.TextconnectorId, I.TextAdapter>()
   const byModelId = new Map<I.TextModelId, I.TextAdapter>()
 
   const supportedModelIdSet = new Set<I.TextModelId>()
-  const supportedAdapterIdSet = new Set<I.TextAdapterId>()
+  const supportedconnectorIdSet = new Set<I.TextconnectorId>()
 
   allLLMAdapters.forEach((adapter) => {
-    supportedAdapterIdSet.add(adapter.id)
+    supportedconnectorIdSet.add(adapter.id)
     byId.set(adapter.id, adapter)
 
     adapter.for.forEach((model) => {
@@ -32,8 +32,12 @@ export const selectLLMAdapter = (() => {
     })
   })
 
-  const supportedModelsMessage = getFormattedMessage('Supported models:', [...supportedModelIdSet])
-  const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [...supportedAdapterIdSet])
+  const supportedModelsMessage = getFormattedMessage('Supported models:', [
+    ...supportedModelIdSet,
+  ])
+  const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [
+    ...supportedconnectorIdSet,
+  ])
 
   return { byId, byModelId, supportedModelsMessage, availableAdaptersMessage }
 })()

@@ -3,17 +3,32 @@ import { camelCaseToPascalCase } from './str'
 import config from '../config'
 import * as I from '../types'
 
+// TODO: add `adapter-middleware`
+export type AdapterModuleFileRole =
+  | 'connector'
+  | 'connector-signature'
+  | 'connector-typings'
+  | 'adapter-entry'
+
+export type AdapterModuleFile = {
+  role: AdapterModuleFileRole
+  path: string
+  name: string
+  body: string
+}
+
 export type IOPrimitive = {
   /**
-   * Unit key with suffix used in result `AdapterAPI` type
-   * for example if we have unit `ObjectUnitSchema.of === 'x'`,
-   * `transferMethod === 'streamToStatic` and `ioType === 'input'`
-   * and the `unitSchema` specified as tuple the result `key` value
-   * should be: `xArrStream`
+   * Suffixed UNIT ID used for connector API signature generation
+   *
+   * @example 'string'
+   * @example 'stringArr'
+   * @example 'stringArrStream'
    **/
   key: string
 
   /**
+   *
    * Depends on `transferMethod` and `unitSchema`
    * it might be simple types: `string`, `Buffer`
    * or: `UnitId`, `StreamOf<UnitId>`, `UnitId[]`, `StreamOf<UnitId[]>
@@ -21,7 +36,7 @@ export type IOPrimitive = {
    **/
   ioUnitTypings: string
 
-  /* Defined if `unitSchema` extends `ObjectUnitSchema` */
+  /* Defined if unit schema extends `ObjectUnitSchema` */
   objectUnit?: {
     /* `ObjectUnitSchema.id` transformed to PascalCase + 'Unit' suffix */
     id: string
@@ -33,7 +48,7 @@ export type IOPrimitive = {
 
 /**
  * The structure used for typings generation and API generation
- * from the `AdapterSchema` instance
+ * from the `connectorSchema` instance
  **/
 export type AdapterAPIStructure = Record<
   string /* transformation type */,
@@ -126,25 +141,6 @@ export const unitSchemaToType = (unitSchema: I.UnitSchema) => {
 }
 
 /**
- * The base key that will be suffixed by another tool
- * and used in the `AdapterAPI` as intermediate key to access
- * function with required typings
- **/
-export const getIOPropertyKey = (
-  supportedIOSchemaUnit: I.IOUnitSchema
-): string => {
-  const unitSchema: I.UnitSchema = Array.isArray(supportedIOSchemaUnit)
-    ? supportedIOSchemaUnit[0]
-    : supportedIOSchemaUnit
-
-  if (typeof unitSchema === 'object') {
-    return unitSchema.id
-  }
-
-  return unitSchema === 'Buffer' ? 'buffer' : unitSchema
-}
-
-/**
  * Each `AdapterAPI` function has `secrets`, `options`, `unit` arguments
  * and return type. In the context of `IOPrimitive` we define `input` as
  * `unit` argument type and `output` as function return type.
@@ -219,7 +215,7 @@ export const generateIOPrimitive = (
 
 /**
  * Collect all possible API functions and units
- * based on the `AdapterSchema` supported IO
+ * based on the `connectorSchema` supported IO
  **/
 export const getFunctionsAndUnits = (
   supportedIO: I.TransformationIOSchema[]
@@ -342,19 +338,25 @@ const apiStructureToTypings = (apiTypeStructure: AdapterAPIStructure) => {
   return str
 }
 
-// TODO: since we making not only typings but API structure
-//       the `generateAPITypingsFromSchema` identifier should be changed
+/*
+export const connectorSchemaToModuleFiles = (
+  connectorSchema: I.connectorSchema
+): {
+  unit: Array<{ file: string; body: string }>
+} => {}
+*/
 
-/* Transform `AdapterSchema[]` to `AdapterAPI` typings structure */
+// FIXME:
+/* Transform `connectorSchema[]` to `AdapterAPI` typings structure */
 export const generateAPITypingsFromSchema = (
-  adapterSchemas: I.AdapterSchema[]
+  connectorSchemas: I.ConnectorSchema[]
 ) => {
-  return adapterSchemas.reduce<
+  return connectorSchemas.reduce<
     Array<{
-      adapterId: string
+      connectorId: string
 
       /**
-       * The content of the `src/types/adapters/${toKebabCase(adapterId)}/index.ts` file
+       * The content of the `src/types/adapters/${toKebabCase(connectorId)}/index.ts` file
        * which is necessary:
        *   - Used unit types import
        *   - Exported `Options` type definition
@@ -362,10 +364,12 @@ export const generateAPITypingsFromSchema = (
        **/
       adapterTypings: string
       apiStructure: AdapterAPIStructure
-      units: Array<{ id: string; adapterId: string; typings: string }>
+      units: Array<{ id: string; connectorId: string; typings: string }>
     }>
-  >((acc, adapterSchema) => {
-    const { units, functions } = getFunctionsAndUnits(adapterSchema.supportedIO)
+  >((acc, connectorSchema) => {
+    const { units, functions } = getFunctionsAndUnits(
+      connectorSchema.supportedIO
+    )
 
     const header = dedent(` 
       /**
@@ -378,8 +382,8 @@ export const generateAPITypingsFromSchema = (
       ? `import { ${unitIds.join(', ')} } from './units'`
       : ''
 
-    const optionsPropList = Object.keys(adapterSchema.options).map((key) => {
-      return `${key}: ${propertyToType(adapterSchema.options[key])}`
+    const optionsPropList = Object.keys(connectorSchema.options).map((key) => {
+      return `${key}: ${propertyToType(connectorSchema.options[key])}`
     })
 
     const optionsType = dedent(`
@@ -388,7 +392,7 @@ export const generateAPITypingsFromSchema = (
       }
     `)
 
-    const secretsPropList = adapterSchema.secrets.map(({ key }) => {
+    const secretsPropList = connectorSchema.keys.map(({ key }) => {
       return `${key}: string`
     })
 
@@ -413,10 +417,10 @@ export const generateAPITypingsFromSchema = (
       .trim()
 
     acc.push({
-      adapterId: adapterSchema.id,
+      connectorId: connectorSchema.id,
       adapterTypings: adapterTypings,
       apiStructure: structure,
-      units: units.map((x) => ({ ...x, adapterId: adapterSchema.id })),
+      units: units.map((x) => ({ ...x, connectorId: connectorSchema.id })),
     })
 
     return acc

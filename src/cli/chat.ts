@@ -93,7 +93,7 @@ const conversation = async (
 }
 
 const runCLIChat = (options: unknown, initialMessages?: Message[]) => {
-  const adapter = getTextAdapter(options.model, options.adapterId)
+  const adapter = getTextAdapter(options.model, options.connectorId)
   const runComplitionStream = complitionStreamFactory(
     adapter.chatToAnswerStream
   )
@@ -186,7 +186,7 @@ export default command(
 
     const options: unknown = {
       model: model || DEFAULT_TEXT_MODEL,
-      adapterId: adapter,
+      connectorId: adapter,
       maxTokens: maxTokens,
       temperature: temperature,
       topP: topP,

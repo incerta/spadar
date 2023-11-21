@@ -1,5 +1,5 @@
 export type ModelId = string
-export type AdapterId = string
+export type ConnectorId = string
 
 /**
  * Each `ObjectPropSchema` extends `PropSchemaBase<T>`
@@ -92,25 +92,17 @@ export type OptionalPayloadPropSchema =
 
 export type PropSchema = ObjectPropSchema | RequiredPayloadPropSchema
 
-// TODO: We could extend payload type
-//       on the public API to use URL's and file
-//       path as common payloads that can be reduced
-//       to `Buffer` or `string` by spadar API
-//       so adapter public API will receive expected type
-
 /**
- * Custom IO Unit schema `id`, `payload` + meta information
+ * Object IO Unit schema: `id`, `payload` + meta information
  *
- * The `id` property will be used in the ADAPTER API structure
- *
- * In the context of adapter API the given type will be used
- * as IO literal `[Transformation][id + suffixes][id + suffixes]`
+ * In the context of connector API the given type will be used
+ * as IO literal: `[Transformation][id + suffixes][id + suffixes]`
  * for `chatMessage` value result could be:
  *
- *   - adapter.textToText.chatMessageStream.chatMessage
- *   - adapter.textToText.chatMessage.string
- *   - adapter.textToText.string.chatMessageArr
- *   - adapter.textToText.chatMessageArrStream.buffer
+ *   - textToText.chatMessageStream.chatMessage
+ *   - textToText.chatMessage.string
+ *   - textToText.string.chatMessageArr
+ *   - textToText.chatMessageArrStream.buffer
  *
  * We will generate `export type ChatMessageUnit` so `id` should be
  * the unique identifier of the specified schema
@@ -160,12 +152,14 @@ export type UnitSchema = ObjectUnitSchema | PayloadUnitSchema
  *   maxTokens?: number
  * }
  *
- * Possible optional (objects) properties of the options schema
- * will be used as generated comment annotations for result type properties
+ * TODO:
+ *       `ObjectPropSchema` property values should be used to annotate
+ *       result typings
  *
- * Values of `min`, `max`, `minLength`, `maxLength` will be used
- * for runtime type check handled by SPADAR MODULE including `StreamOf<T>`
- * streams chunks.
+ * TODO:
+ *       Values of `min`, `max`, `minLength`, `maxLength`,
+ *       including `StreamOf<T>` streams chunks. Should be used
+ *       for runtime type check handled by SPADAR
  **/
 export type ModelOptionsSchema = {
   model: StringUnionPropSchema & { required: true; of: string[] }
@@ -194,7 +188,7 @@ export type Transformation =
 export type IOUnitSchema = UnitSchema | [UnitSchema]
 
 /**
- * Result `AdapterAPI` function type
+ * Result `ConnectorAPI` function type
  *
  * @example ['string', 'string']
  *
@@ -210,7 +204,7 @@ export type TransferMethod =
   | 'staticInStreamOut'
 
 /**
- * IO types will be transformed into the API type
+ * IO types that will be transformed into the API
  *
  * @example
  * {
@@ -222,35 +216,41 @@ export type TransferMethod =
  * }
  *
  * Will be transformed into the API [Transformation][inUnitType][outUnitType]:
- *   - adapter.textToText.number.string
- *   - adapter.textToText.numberStream.stringStream
+ *   - $ConnectorId.textToText.number.string
+ *   - $ConnectorId.textToText.numberStream.stringStream
  **/
 export type TransformationIOSchema = {
   type: Transformation
   io: { [k in TransferMethod]?: IOSchema[] }
 }
 
-export type AdapterSecrectsSchema = Array<{ key: string; howToGet?: string }>
+export type ConnectorKeysSchema = Array<{ key: string; description?: string }>
 
 /**
- * Schema for `AdapterAPI` narrow type/structure generation
+ * Schema for `ConnectorAPI` narrow type/structure generation
  **/
-export type AdapterSchema = {
+export type ConnectorSchema = {
   /**
    * The `id` is used by `spadar adapter --generateAPI` command
-   * for generation of the following files in the ADAPTER MODULE:
-   *   - `src/types/adapters/${toKebabCase(adapterId)}/index.ts`
-   *   - `src/types/adapters/${toKebabCase(adapterId)}/units/${toKebabCase(unitId)}`
-   *   - `src/adapters/${toKebabCase(adapterId)}/debug-adapter.ts`
-   *   - `src/adapters/${toKebabCase(adapterId)}/index.ts`
+   * for generation of the following files in the ADAPTER module:
+   *
+   * - `src/connectors/${toKebabCase(connectorId)}.typings.ts/`
+   * - `src/connectors/${toKebabCase(connectorId)}.signature.ts/`
+   * - `src/connectors/${toKebabCase(connectorId)}.ts`
    **/
   id: string
 
-  /* Explain specifics of the Adapter */
-  description: string
+  /* Explain specifics of the Connector */
+  description?: string
 
-  /* Secret key like "OPENAI_API_KEY" and how to get hint */
-  secrets: AdapterSecrectsSchema
+  /**
+   * @example
+   *
+   * ```js
+   * { key: 'SOME_VENDOR_API_KEY', description: 'One might get the key there and there' }
+   * ```
+   **/
+  keys: ConnectorKeysSchema
 
   /**
    * Values will be available for all functional calls and used as CLI model parameters
@@ -259,9 +259,7 @@ export type AdapterSchema = {
   options: ModelOptionsSchema
 
   /**
-   * Types of IO of the choosen ADAPTER that will be
-   * eventually transformed into type that extends AdapterAPI
-   * but with more narrow typings then AdapterAPI
+   * Types of IO following CONNECTOR going to support
    **/
   supportedIO: TransformationIOSchema[]
 }
@@ -279,7 +277,7 @@ export type StreamOf<T> = {
 /**
  * The generated API will extend the following format
  **/
-export type AdapterAPI = Record<
+export type ConnectorAPI = Record<
   Transformation,
   {
     [inputType: string]: {

@@ -3,14 +3,14 @@ import * as I from '../types'
 
 export const getTextAdapter = (
   model: string,
-  adapterIdOverride?: string
+  connectorIdOverride?: string
 ): any => {
-  if (adapterIdOverride) {
-    const requestedAdapter = selectLLMAdapter.byId.get(adapterIdOverride)
+  if (connectorIdOverride) {
+    const requestedAdapter = selectLLMAdapter.byId.get(connectorIdOverride)
 
     if (!requestedAdapter) {
       throw Error(
-        `Could't find given adapter: "${adapterIdOverride}".${selectLLMAdapter.availableAdaptersMessage}`
+        `Could't find given adapter: "${connectorIdOverride}".${selectLLMAdapter.availableAdaptersMessage}`
       )
     }
 
@@ -66,10 +66,10 @@ export const collectAdapters = <T extends I.AdapterType, A extends I.Adapter>(
   >()
 
   const supportedModelIdSet = new Set<I.TextModelId>()
-  const supportedAdapterIdSet = new Set<I.TextAdapterId>()
+  const supportedconnectorIdSet = new Set<I.TextconnectorId>()
 
   allAdapters.forEach((adapter) => {
-    supportedAdapterIdSet.add(adapter.id)
+    supportedconnectorIdSet.add(adapter.id)
     byId.set(adapter.id, adapter)
 
     adapter.for.forEach((model) => {
@@ -82,7 +82,7 @@ export const collectAdapters = <T extends I.AdapterType, A extends I.Adapter>(
     ...supportedModelIdSet,
   ])
   const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [
-    ...supportedAdapterIdSet,
+    ...supportedconnectorIdSet,
   ])
 
   return { byId, byModelId, supportedModelsMessage, availableAdaptersMessage }
