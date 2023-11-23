@@ -2,7 +2,6 @@ import dedent from 'dedent'
 import config from '../config'
 import * as schema from '../utils/schema'
 import * as I from '../types'
-import { toKebabCase } from '../utils/str'
 
 it('propertyToType: RequiredPayloadPropSchema cases', () => {
   expect(schema.propertyToType('string')).toBe('string')
@@ -129,7 +128,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'stringStream',
-    typings: 'StreamOf<string>',
+    typings: 'I.StreamOf<string>',
   })
 
   /* Primitive unit array schema input */
@@ -145,7 +144,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    typings: 'StreamOf<string[]>',
+    typings: 'I.StreamOf<string[]>',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -170,7 +169,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -194,7 +193,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -209,7 +208,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'stringStream',
-      typings: 'StreamOf<string>',
+      typings: 'I.StreamOf<string>',
     }
   )
 
@@ -226,7 +225,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    typings: 'StreamOf<string[]>',
+    typings: 'I.StreamOf<string[]>',
   })
 
   /* Primitive unit array schema output */
@@ -247,7 +246,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -271,7 +270,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArrStream',
-    typings: 'StreamOf<CustomUnit[]>',
+    typings: 'I.StreamOf<CustomUnit[]>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -298,7 +297,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
   expect(schema.generateIOPrimitive(transferMethod, 'input', 'string')).toEqual(
     {
       key: 'stringStream',
-      typings: 'StreamOf<string>',
+      typings: 'I.StreamOf<string>',
     }
   )
 
@@ -307,7 +306,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', 'string')
   ).toEqual({
     key: 'stringStream',
-    typings: 'StreamOf<string>',
+    typings: 'I.StreamOf<string>',
   })
 
   /* Primitive unit array schema input */
@@ -315,7 +314,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    typings: 'StreamOf<string[]>',
+    typings: 'I.StreamOf<string[]>',
   })
 
   /* Primitive unit array schema output */
@@ -323,7 +322,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', ['string'])
   ).toEqual({
     key: 'stringArrStream',
-    typings: 'StreamOf<string[]>',
+    typings: 'I.StreamOf<string[]>',
   })
 
   const customUnit: I.ObjectUnitSchema = {
@@ -336,7 +335,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -348,7 +347,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -360,7 +359,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'input', [customUnit])
   ).toEqual({
     key: 'customArrStream',
-    typings: 'StreamOf<CustomUnit[]>',
+    typings: 'I.StreamOf<CustomUnit[]>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -372,7 +371,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
     schema.generateIOPrimitive(transferMethod, 'output', customUnit)
   ).toEqual({
     key: 'customStream',
-    typings: 'StreamOf<CustomUnit>',
+    typings: 'I.StreamOf<CustomUnit>',
     objectUnit: {
       id: 'CustomUnit',
       typings: expect.any(String),
@@ -475,6 +474,8 @@ it(`getConnectorFiles[typings|signature|connector]: schema with 'Buffer' and 'st
        * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
        **/
 
+      import * as I from '../types'
+
       export type Keys = {
         OPENAI_API_KEY: string
       }
@@ -487,19 +488,19 @@ it(`getConnectorFiles[typings|signature|connector]: schema with 'Buffer' and 'st
         textToText: {
           string: {
             /* string -> string;  */
-            string: (secrets: Secrets, options: Options, unit: string) => Promise<string>
+            string: (keys: Keys, options: Options, unit: string) => Promise<string>
           }
           buffer: {
             /* buffer -> stringStream;  */
-            stringStream: (secrets: Secrets, options: Options, unit: Buffer) => Promise<StreamOf<string>>
+            stringStream: (keys: Keys, options: Options, unit: Buffer) => Promise<I.StreamOf<string>>
           }
           stringStream: {
             /* stringStream -> string;  */
-            string: (secrets: Secrets, options: Options, unit: StreamOf<string>) => Promise<string>
+            string: (keys: Keys, options: Options, unit: I.StreamOf<string>) => Promise<string>
           }
           bufferStream: {
             /* bufferStream -> stringStream;  */
-            stringStream: (secrets: Secrets, options: Options, unit: StreamOf<Buffer>) => Promise<StreamOf<string>>
+            stringStream: (keys: Keys, options: Options, unit: I.StreamOf<Buffer>) => Promise<I.StreamOf<string>>
           }
         }
       }
@@ -522,28 +523,60 @@ it(`getConnectorFiles[typings|signature|connector]: schema with 'Buffer' and 'st
       
       import Connector from './test-connector.typings'
 
-      export const connector: Connector = {
+      /**
+       * The Connector API signature file exists as an intermediate
+       * step between the connector typings and the actual connector
+       * that SHOULD BE edited by the user MANUALLY.
+       *
+       * Whenever the schema is changed and the user regenerates the connector
+       * typings/signatures, the existing connector API files
+       * MUST BE untouched by the code generation.
+       *
+       * We view the connector API that is filled in by the user manually as a bunch
+       * of mutations of the signature object. From the Typescript
+       * standpoint, these mutations are not required, so we need a way
+       * to check which parts of the schema are actually implemented
+       * and omit them from the resulting Adapter API.
+       **/
+      const signFn = <
+        T extends ((...args: unknown[]) => unknown) & { isSpadarSignature?: boolean }
+      >(
+        x: T
+      ): T & { isSpadarSignature?: boolean } => {
+        x.isSpadarSignature = true
+        return x
+      }
+
+      export const signature: Connector = {
         textToText: {
           string: {
             /* string -> string;  */
-            string: () => ${notImplementedError}
-          }
+            string: signFn(() => {
+              ${notImplementedError}
+            }),
+          },
           buffer: {
             /* buffer -> stringStream;  */
-            stringStream: () => ${notImplementedError}
-          }
+            stringStream: signFn(() => {
+              ${notImplementedError}
+            }),
+          },
           stringStream: {
             /* stringStream -> string;  */
-            string: () => ${notImplementedError}
-          }
+            string: signFn(() => {
+              ${notImplementedError}
+            }),
+          },
           bufferStream: {
             /* bufferStream -> stringStream;  */
-            stringStream: () => ${notImplementedError}
-          }
+            stringStream: signFn(() => {
+              ${notImplementedError}
+            }),
+          },
         }
       }
       
-      export default connector`)
+      export default signature`)
   )
 
   expect(result.connector.filePath).toBe(
@@ -620,6 +653,8 @@ it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
        * DO NOT EDIT IT MANUALLY because it could be automatically rewritten
        **/
 
+      import * as I from '../types'
+
       export type Keys = {
         OPENAI_API_KEY: string
       }
@@ -642,31 +677,31 @@ it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
         textToText: {
           customOne: {
             /* customOne -> customOne;  */
-            customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit>
+            customOne: (keys: Keys, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit>
             /* customOne -> customTwo;  */
-            customTwo: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomTwoUnit>
+            customTwo: (keys: Keys, options: Options, unit: CustomOneUnit) => Promise<CustomTwoUnit>
             /* customOne -> customOneArr;  */
-            customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit[]>
+            customOneArr: (keys: Keys, options: Options, unit: CustomOneUnit) => Promise<CustomOneUnit[]>
             /* customOne -> customOneStream;  */
-            customOneStream: (secrets: Secrets, options: Options, unit: CustomOneUnit) => Promise<StreamOf<CustomOneUnit>>
+            customOneStream: (keys: Keys, options: Options, unit: CustomOneUnit) => Promise<I.StreamOf<CustomOneUnit>>
           }
           customTwo: {
             /* customTwo -> customOne;  */
-            customOne: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomOneUnit>
+            customOne: (keys: Keys, options: Options, unit: CustomTwoUnit) => Promise<CustomOneUnit>
             /* customTwo -> customTwo;  */
-            customTwo: (secrets: Secrets, options: Options, unit: CustomTwoUnit) => Promise<CustomTwoUnit>
+            customTwo: (keys: Keys, options: Options, unit: CustomTwoUnit) => Promise<CustomTwoUnit>
           }
           customOneArr: {
             /* customOneArr -> customOne;  */
-            customOne: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit>
+            customOne: (keys: Keys, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit>
             /* customOneArr -> customOneArr;  */
-            customOneArr: (secrets: Secrets, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit[]>
+            customOneArr: (keys: Keys, options: Options, unit: CustomOneUnit[]) => Promise<CustomOneUnit[]>
           }
           customOneStream: {
             /* customOneStream -> customOne;  */
-            customOne: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<CustomOneUnit>
+            customOne: (keys: Keys, options: Options, unit: I.StreamOf<CustomOneUnit>) => Promise<CustomOneUnit>
             /* customOneStream -> customOneStream;  */
-            customOneStream: (secrets: Secrets, options: Options, unit: StreamOf<CustomOneUnit>) => Promise<StreamOf<CustomOneUnit>>
+            customOneStream: (keys: Keys, options: Options, unit: I.StreamOf<CustomOneUnit>) => Promise<I.StreamOf<CustomOneUnit>>
           }
         }
       }

@@ -43,13 +43,17 @@ export const getAdapterModuleAbsolutePath = (relativePath: string): string => {
     `)
   }
 
+  // TODO: now one can apply spadar cli command only
+  //       if current path is the root of the adapter
+  //       module source but we could find the project
+  //       root directory from its nested directories
   const currentPath = process.cwd() + '/'
-  const supposedFilePath = currentPath + config.adapter.schemaPath
+  const supposedFilePath = currentPath + relativePath
 
   if (fs.existsSync(supposedFilePath) === false) {
     throw new SpadarError(`
-            The "${supposedFilePath}" file is not found
-          `)
+      The "${supposedFilePath}" file is not found
+    `)
   }
 
   return supposedFilePath

@@ -1,6 +1,3 @@
-export type ModelId = string
-export type ConnectorId = string
-
 /**
  * Each `ObjectPropSchema` extends `PropSchemaBase<T>`
  **/
@@ -57,7 +54,7 @@ export type BufferPropSchema = PropSchemaBase<Buffer> & {
  * Specified strings will be transformed into union/literal type
  *
  * @example
- * { type: 'literal', of: ['one', 'two'] }
+ * { type: 'stringUnion', of: ['one', 'two'] }
  *
  * result type: 'one' | 'two'
  **/
@@ -73,24 +70,16 @@ export type ObjectPropSchema =
   | BufferPropSchema
   | StringUnionPropSchema
 
-export type RequiredPayloadPropSchema =
-  | 'Buffer'
-  | 'string'
-  | 'number'
-  | 'boolean'
+export type RequiredPropSchema = 'Buffer' | 'string' | 'number' | 'boolean'
 
-// TODO: rename to `OptionalLiteralPropertySchema`
-export type OptionalPayloadPropSchema =
-  | '?Buffer'
-  | '?string'
-  | '?number'
-  | '?boolean'
+// TODO: use this optional payload schema
+export type OptionalPropSchema = '?Buffer' | '?string' | '?number' | '?boolean'
 
 // TODO: Array<string> as required `StringUnionPropertySchema` */
 //       [string] as required `string` literal required `StringUnionPropertySchema`
 //       with only singular `of` memeber
 
-export type PropSchema = ObjectPropSchema | RequiredPayloadPropSchema
+export type PropSchema = ObjectPropSchema | RequiredPropSchema
 
 /**
  * Object IO Unit schema: `id`, `payload` + meta information
@@ -210,14 +199,14 @@ export type TransferMethod =
  * {
  *   type: 'textToText',
  *   io: {
- *     staticInStaticOut: [{ in: 'number', out: 'string' }],
- *     streamInStreamOut: [{ in: 'number', out: 'string' }]
+ *     staticInStaticOut: [['number', 'string']],
+ *     streamInStreamOut: [['number', 'string']]
  *   }
  * }
  *
  * Will be transformed into the API [Transformation][inUnitType][outUnitType]:
- *   - $ConnectorId.textToText.number.string
- *   - $ConnectorId.textToText.numberStream.stringStream
+ *   - signature.textToText.number.string
+ *   - signature.textToText.numberStream.stringStream
  **/
 export type TransformationIOSchema = {
   type: Transformation
@@ -274,14 +263,9 @@ export type StreamOf<T> = {
   stream: AsyncIterable<T>
 }
 
-/**
- * The generated API will extend the following format
- **/
-export type ConnectorAPI = Record<
-  Transformation,
-  {
-    [inputType: string]: {
-      [outputType: string]: (options: unknown, unit: unknown) => unknown
-    }
-  }
->
+export type Adapter = {
+  name: string
+  version: string
+  schema: ConnectorSchema[]
+  connectors: { [connectorId: string]: unknown }
+}
