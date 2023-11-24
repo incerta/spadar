@@ -1,3 +1,4 @@
+import readline from 'readline'
 import * as clackPrompt from '@clack/prompts'
 
 export async function getUserPrompt(message: string) {
@@ -20,3 +21,18 @@ export async function getUserPrompt(message: string) {
   )
   return (await group).prompt
 }
+
+export const askQuestion = (question: string): Promise<string> =>
+  new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+
+    rl.question(question, (answer: unknown) => {
+      rl.close()
+      resolve(typeof answer === 'string' ? answer : '')
+    })
+
+    console.log('\n')
+  })

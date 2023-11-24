@@ -1,12 +1,46 @@
+import fs from 'fs'
 import dotenv from 'dotenv'
 import { toKebabCase } from './utils/str'
+import { SpadarError } from './utils/error'
+import { resolvePath } from './utils/command-line'
 import { version } from '../package.json'
+
+export type UsedAdapter = {
+  /**
+   * The adapter module name
+   **/
+  name: string
+
+  /**
+   * The adapter module version
+   **/
+  version: string
+
+  /**
+   * Absolute path to the adapter module
+   **/
+  path: string
+
+  /**
+   * The record key is secret Key and record value is its description
+   **/
+  requiredKeys: Record<string, string>
+
+  /**
+   * Keys that actually specified
+   **/
+  specifiedKeys: Record<string, string>
+}
+
+export type UserConfig = {
+  usedAdapters: UsedAdapter[]
+}
 
 dotenv.config()
 
 const REQUIRED_ENVS = ['OPEN_AI_API_KEY']
 
-const { OPEN_AI_API_KEY } = process.env
+const { OPEN_AI_API_KEY, SPADAR_RESOURCES_DIR } = process.env
 
 if (!OPEN_AI_API_KEY) {
   const missingEnvs = REQUIRED_ENVS.filter((x) => !process.env[x]).join(', ')
@@ -19,9 +53,68 @@ if (!OPEN_AI_API_KEY) {
   )
 }
 
+// TODO: if spadar is installed as local module
+//       the resources directory should be identified
+//       from the `spadar.rc.js` file default export
+//       object `resourcesDirectory` property value
+
+const resourcesDirectory = ((): string => {
+  if (SPADAR_RESOURCES_DIR) return resolvePath(SPADAR_RESOURCES_DIR)
+
+  // TODO: check if `.bashrc`, `.bash_profile` or `.zshrc` files exists
+  //       and ask user to add required env into shell config file through
+  //       interactive CLI Q/A
+
+  throw new SpadarError(`
+    The SPADAR_RESOURCES_DIR env variable is not specified.
+    Please add it to your shell config manually. The resources
+    directory of the globally installed module will store
+    chat conversation logs, connection to globally installed
+    adapters and required API keys for them.
+  `)
+})()
+
+const userConfig = ((): UserConfig => {
+  const usedAdapters = ((): UserConfig['usedAdapters'] => {
+    fs.mkdirSync(resourcesDirectory, { recursive: true })
+
+    const usedAdaptersFilePath = resourcesDirectory + '/used-adapters.json'
+
+    if (fs.existsSync(usedAdaptersFilePath) === false) {
+      fs.writeFileSync(usedAdaptersFilePath, '[]')
+      return []
+    }
+
+    try {
+      return JSON.parse(fs.readFileSync(usedAdaptersFilePath, 'utf-8'))
+    } catch (e) {
+      console.error(e)
+      throw new SpadarError(
+        `Failed to parse JSON file: ${usedAdaptersFilePath}`
+      )
+    }
+  })()
+
+  return { usedAdapters }
+})()
+
 export default {
-  /* SPADAR module version */
+  /* Spadar module version */
   version: version,
+
+  resources: {
+    /* The directory for spadar logs, keys and adapter > spadar API connection */
+    rootDir: resourcesDirectory,
+
+    /*
+     * Adapters that had been connected to the spadar through
+     * the `spadar adapter --use $ADAPTER_MODULE_PATH` command
+     **/
+    usedAdaptersFilePath: resourcesDirectory + '/used-adapters.json',
+  },
+
+  /* The user config formed based on `resourcesDirectory` files */
+  userConfig,
 
   /* All paths are relative to the root of ADAPTER module source */
   adapter: {

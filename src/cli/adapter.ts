@@ -5,8 +5,9 @@ import { command } from 'cleye'
 
 import { schemaToAdapterFiles } from '../utils/schema'
 import { getAdapterModuleAbsolutePath } from '../utils/command-line'
+import { askQuestion } from '../utils/interactive-cli'
 
-import config from '../config'
+import config, { UsedAdapter } from '../config'
 import * as I from '../types'
 
 export default command(
@@ -24,13 +25,32 @@ export default command(
       generate: {
         type: Boolean,
         description: dedent(`
-            If current directory is an ADAPTER path generate/regenrate typings 
-            from "${config.adapter.schemaFilePath}" file`),
+          If current directory is an ADAPTER path generate/regenrate typings 
+          from "${config.adapter.schemaFilePath}" file`),
         alias: 'g',
       },
+      use: {
+        type: String,
+        description: dedent(
+          `Specify absolute or relative path to the adapter module`
+        ),
+        alias: 'u',
+      },
+      list: {
+        type: Boolean,
+        description: 'List all currently connected adapters',
+      },
+
+      // TODO: implement `--health` flag which checks if
+      //       connected adapter is actually available and which
+      //       keys of the given adapter are actually specified in
+      //       the config
     },
   },
   async (argv) => {
+    // TODO: if multiple flags are set that should not supposed to
+    //       work with each other we should throw an error
+
     if (argv.flags.generate) {
       const shemaFilePath = getAdapterModuleAbsolutePath(
         config.adapter.schemaFilePath
@@ -97,6 +117,108 @@ export default command(
 
       if (argv.flags.silent !== true) console.log(generationLog)
       process.exit(0)
+    }
+
+    if (argv.flags.use) {
+      // TODO: support connection of the multiple adapters at once
+
+      const isRelativePath = argv.flags.use[0] === '.'
+      const adapterModulePath = isRelativePath
+        ? getAdapterModuleAbsolutePath(argv.flags.use)
+        : argv.flags.use
+
+      const adapter = require(adapterModulePath +
+        config.adapter.adapterEntryPoint).default as I.Adapter
+
+      const usedAdapter = config.userConfig.usedAdapters.find(
+        (x) => x.name === adapter.name
+      )
+
+      const requiredKeys = adapter.schema.reduce<Record<string, string>>(
+        (acc, connectorSchema) => {
+          connectorSchema.keys.forEach(({ key, description }) => {
+            acc[key] = description || 'The key description is not specified'
+          })
+
+          return acc
+        },
+        {}
+      )
+
+      const updatedUsedAdapter: UsedAdapter = {
+        name: adapter.name,
+        version: adapter.version,
+        path: adapterModulePath,
+        specifiedKeys: usedAdapter?.specifiedKeys || {},
+        requiredKeys: requiredKeys,
+      }
+
+      if (usedAdapter) {
+        config.userConfig.usedAdapters = config.userConfig.usedAdapters.filter(
+          (x) => x.name !== usedAdapter.name
+        )
+      }
+
+      config.userConfig.usedAdapters.push(updatedUsedAdapter)
+
+      fs.writeFileSync(
+        config.resources.usedAdaptersFilePath,
+        JSON.stringify(config.userConfig.usedAdapters)
+      )
+
+      const { name, version } = updatedUsedAdapter
+
+      if (argv.flags.silent !== true) {
+        console.log(
+          `\nYour adapter ${name}@${version} had been succesfully connected!\n`
+        )
+
+        const notSpecifiedKeys: Array<{ key: string; description?: string }> =
+          []
+
+        for (const key in updatedUsedAdapter.requiredKeys) {
+          if (!updatedUsedAdapter.specifiedKeys[key]) {
+            const description = updatedUsedAdapter.requiredKeys[key]
+            notSpecifiedKeys.push({ key, description })
+          }
+        }
+
+        if (notSpecifiedKeys.length) {
+          console.log(
+            dedent(`
+            We have detected that following keys for the recently connected adapter
+            are not yet specified:
+          `) + '\n'
+          )
+
+          notSpecifiedKeys.forEach(({ key, description }) =>
+            console.log(key + ': ' + description)
+          )
+
+          console.log('')
+
+          const answer = await askQuestion(
+            dedent(`
+              You can specify them manually later at the ${config.resources.usedAdaptersFilePath}
+              But would you like to specify those keys one by one right now? y/n
+          `)
+          )
+
+          if (answer.trim() === 'y') {
+            for (const { key, description } of notSpecifiedKeys) {
+              const secret = await askQuestion(`${key}: ${description}`)
+              updatedUsedAdapter.specifiedKeys[key] = secret
+            }
+          }
+        }
+
+        fs.writeFileSync(
+          config.resources.usedAdaptersFilePath,
+          JSON.stringify(config.userConfig.usedAdapters)
+        )
+        // TODO: log if connected adapter could be used in spadar cli chat
+        //       based on the provided schema
+      }
     }
   }
 )

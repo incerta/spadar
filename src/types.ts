@@ -220,7 +220,7 @@ export type ConnectorKeysSchema = Array<{ key: string; description?: string }>
  **/
 export type ConnectorSchema = {
   /**
-   * The `id` is used by `spadar adapter --generateAPI` command
+   * The `id` is used by `spadar adapter --generate` command
    * for generation of the following files in the ADAPTER module:
    *
    * - `src/connectors/${toKebabCase(connectorId)}.typings.ts/`
@@ -236,7 +236,7 @@ export type ConnectorSchema = {
    * @example
    *
    * ```js
-   * { key: 'SOME_VENDOR_API_KEY', description: 'One might get the key there and there' }
+   * [{ key: 'SOME_VENDOR_API_KEY', description: 'One might get the key there and there' }]
    * ```
    **/
   keys: ConnectorKeysSchema
@@ -263,6 +263,9 @@ export type StreamOf<T> = {
   stream: AsyncIterable<T>
 }
 
+/**
+ * Result adapter module index object type
+ **/
 export type Adapter = {
   name: string
   version: string
