@@ -184,7 +184,16 @@ export type IOUnitSchema = UnitSchema | [UnitSchema]
  * result function type:
  *   (secrets: Secrets, options: Options, unit: string) => string
  **/
-export type IOSchema = [inputUnit: IOUnitSchema, outputUnit: IOUnitSchema]
+export type IOSchema = [
+  inputUnit: IOUnitSchema,
+  outputUnit: IOUnitSchema,
+
+  /**
+   * The description will be used in the adapter requirements
+   * and adapter -> spadar app compatibility logs
+   **/
+  description?: string
+]
 
 export type TransferMethod =
   | 'streamInStaticOut'
