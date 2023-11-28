@@ -98,7 +98,7 @@ export const runAdapter = async (flags: {
     if (ignoredFilePaths.length) {
       generationLog +=
         dedent(`
-            Initially generated but now ignored files (might require manual edditing):\n
+            Initially generated but now ignored files (might require manual editing):\n
             ${ignoredFilePaths.join('\n')}
         `) + '\n'
     }
@@ -140,10 +140,16 @@ export const runAdapter = async (flags: {
     }
 
     config.userConfig.usedAdapters.push(updatedUsedAdapter)
+    const stringifiedUsedAdapters = JSON.stringify(
+      config.userConfig.usedAdapters,
+      null,
+      2
+    )
 
     fs.writeFileSync(
       config.resources.usedAdaptersFilePath,
-      JSON.stringify(config.userConfig.usedAdapters)
+      stringifiedUsedAdapters,
+      'utf-8'
     )
 
     const { name, version } = updatedUsedAdapter
@@ -193,7 +199,7 @@ export const runAdapter = async (flags: {
 
       fs.writeFileSync(
         config.resources.usedAdaptersFilePath,
-        JSON.stringify(config.userConfig.usedAdapters)
+        JSON.stringify(config.userConfig.usedAdapters, null, 2)
       )
     }
   }
