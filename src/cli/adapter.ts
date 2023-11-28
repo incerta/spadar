@@ -1,7 +1,6 @@
 import dedent from 'dedent'
 import fs from 'fs'
 import path from 'path'
-import { command } from 'cleye'
 
 import { SpadarError } from '../utils/error'
 import { schemaToAdapterFiles } from '../utils/schema'
@@ -22,228 +21,191 @@ const getAdapterByPath = (
     )
   }
 
-  const adapter = require(adapterModulePath + config.adapter.adapterEntryPoint)
-    .default as I.Adapter
+  const adapter = require(adapterModulePath +
+    '/' +
+    config.adapter.adapterEntryPoint).default as I.Adapter
 
   return { adapter, adapterAbsolutePath: adapterModulePath }
 }
 
-export default command(
-  {
-    name: 'adapter',
-    help: {
-      description: 'The CLI API for adapter module generation',
-    },
-    flags: {
-      silent: {
-        type: Boolean,
-        description: 'Every log will be ommited with an exception of errors',
-        alias: 's',
-      },
-      generate: {
-        type: Boolean,
-        description: dedent(`
-          If current directory is an ADAPTER path generate/regenrate typings 
-          from "${config.adapter.schemaFilePath}" file`),
-        alias: 'g',
-      },
-      use: {
-        type: String,
-        description: dedent(
-          `Specify absolute or relative path to the adapter module`
-        ),
-        alias: 'u',
-      },
-      list: {
-        type: Boolean,
-        description: 'List all currently connected adapters',
-      },
+export const runAdapter = async (flags: {
+  generate?: boolean
+  use?: string
+  silent?: boolean
+  list?: boolean
+}) => {
+  if (flags.generate) {
+    const schemaFilePath = resolvePath(config.adapter.schemaFilePath)
+    const packageJSONFilePath = resolvePath(config.adapter.packageJSON)
 
-      // TODO: implement `--health` flag which checks if
-      //       connected adapter is actually available and which
-      //       keys of the given adapter are actually specified in
-      //       the config
-    },
-  },
-  async (argv) => {
-    // TODO: if multiple flags are set that should not supposed to
-    //       work with each other we should throw an error
+    if (fs.existsSync(schemaFilePath) !== true) {
+      throw new SpadarError(`Could't find schema file at: ${schemaFilePath}`)
+    }
 
-    if (argv.flags.generate) {
-      const schemaFilePath = resolvePath(config.adapter.schemaFilePath)
-      const packageJSONFilePath = resolvePath(config.adapter.packageJSON)
+    if (fs.existsSync(packageJSONFilePath) !== true) {
+      throw new SpadarError(
+        `Could't find package.json file at: ${schemaFilePath}`
+      )
+    }
 
-      if (fs.existsSync(schemaFilePath) !== true) {
-        throw new SpadarError(`Could't find schema file at: ${schemaFilePath}`)
-      }
+    const schema = require(schemaFilePath).default as I.ConnectorSchema[]
+    const adapterPackageJSON = require(packageJSONFilePath) as {
+      name: string
+      version: string
+    }
 
-      if (fs.existsSync(packageJSONFilePath) !== true) {
-        throw new SpadarError(
-          `Could't find package.json file at: ${schemaFilePath}`
-        )
-      }
+    const files = schemaToAdapterFiles(adapterPackageJSON, schema)
 
-      const schema = require(schemaFilePath).default as I.ConnectorSchema[]
-      const adapterPackageJSON = require(packageJSONFilePath) as {
-        name: string
-        version: string
-      }
+    const generatedFilePaths: string[] = []
+    const updatedFilePaths: string[] = []
+    const ignoredFilePaths: string[] = []
 
-      const files = schemaToAdapterFiles(adapterPackageJSON, schema)
+    files.forEach((file) => {
+      const absolutePath = process.cwd() + '/' + file.filePath
+      const isFileExists = fs.existsSync(absolutePath)
+      const shouldIgnoreFile = isFileExists && file.shouldBeEditedManually
 
-      const generatedFilePaths: string[] = []
-      const updatedFilePaths: string[] = []
-      const ignoredFilePaths: string[] = []
+      if (shouldIgnoreFile) return ignoredFilePaths.push(absolutePath)
 
-      files.forEach((file) => {
-        const absolutePath = process.cwd() + '/' + file.filePath
-        const isFileExists = fs.existsSync(absolutePath)
-        const shouldIgnoreFile = isFileExists && file.shouldBeEditedManually
+      const directoryPath = path.dirname(absolutePath)
 
-        if (shouldIgnoreFile) return ignoredFilePaths.push(absolutePath)
+      fs.mkdirSync(directoryPath, { recursive: true })
+      fs.writeFileSync(absolutePath, file.body)
 
-        const directoryPath = path.dirname(absolutePath)
+      isFileExists
+        ? updatedFilePaths.push(absolutePath)
+        : generatedFilePaths.push(absolutePath)
+    })
 
-        fs.mkdirSync(directoryPath, { recursive: true })
-        fs.writeFileSync(absolutePath, file.body)
+    let generationLog = '\n'
 
-        isFileExists
-          ? updatedFilePaths.push(absolutePath)
-          : generatedFilePaths.push(absolutePath)
-      })
-
-      let generationLog = '\n'
-
-      if (generatedFilePaths.length) {
-        generationLog +=
-          dedent(`
+    if (generatedFilePaths.length) {
+      generationLog +=
+        dedent(`
             Newly generated files:\n
             ${generatedFilePaths.join('\n')}
         `) + '\n'
-      }
+    }
 
-      if (updatedFilePaths.length) {
-        generationLog +=
-          dedent(`
+    if (updatedFilePaths.length) {
+      generationLog +=
+        dedent(`
             Files that updated automatically:\n
             ${updatedFilePaths.join('\n')}
         `) + '\n\n'
-      }
+    }
 
-      if (ignoredFilePaths.length) {
-        generationLog +=
-          dedent(`
+    if (ignoredFilePaths.length) {
+      generationLog +=
+        dedent(`
             Initially generated but now ignored files (might require manual edditing):\n
             ${ignoredFilePaths.join('\n')}
         `) + '\n'
-      }
-
-      if (argv.flags.silent !== true) console.log(generationLog)
-      process.exit(0)
     }
 
-    // TODO: support connection of the multiple adapters at once
-    if (argv.flags.use) {
-      const { adapter, adapterAbsolutePath } = getAdapterByPath(argv.flags.use)
+    if (flags.silent !== true) console.log(generationLog)
+    process.exit(0)
+  }
 
-      const usedAdapter = config.userConfig.usedAdapters.find(
-        (x) => x.name === adapter.name
+  if (flags.use) {
+    const { adapter, adapterAbsolutePath } = getAdapterByPath(flags.use)
+
+    const usedAdapter = config.userConfig.usedAdapters.find(
+      (x) => x.name === adapter.name
+    )
+
+    const requiredKeys = adapter.schema.reduce<Record<string, string>>(
+      (acc, connectorSchema) => {
+        connectorSchema.keys.forEach(({ key, description }) => {
+          acc[key] = description || 'The key description is not specified'
+        })
+
+        return acc
+      },
+      {}
+    )
+
+    const updatedUsedAdapter: UsedAdapter = {
+      name: adapter.name,
+      version: adapter.version,
+      path: adapterAbsolutePath,
+      specifiedKeys: usedAdapter?.specifiedKeys || {},
+      requiredKeys: requiredKeys,
+    }
+
+    if (usedAdapter) {
+      config.userConfig.usedAdapters = config.userConfig.usedAdapters.filter(
+        (x) => x.name !== usedAdapter.name
+      )
+    }
+
+    config.userConfig.usedAdapters.push(updatedUsedAdapter)
+
+    fs.writeFileSync(
+      config.resources.usedAdaptersFilePath,
+      JSON.stringify(config.userConfig.usedAdapters)
+    )
+
+    const { name, version } = updatedUsedAdapter
+
+    if (flags.silent !== true) {
+      console.log(
+        `\nYour adapter ${name}@${version} had been succesfully connected!\n`
       )
 
-      const requiredKeys = adapter.schema.reduce<Record<string, string>>(
-        (acc, connectorSchema) => {
-          connectorSchema.keys.forEach(({ key, description }) => {
-            acc[key] = description || 'The key description is not specified'
-          })
+      const notSpecifiedKeys: Array<{ key: string; description?: string }> = []
 
-          return acc
-        },
-        {}
-      )
-
-      const updatedUsedAdapter: UsedAdapter = {
-        name: adapter.name,
-        version: adapter.version,
-        path: adapterAbsolutePath,
-        specifiedKeys: usedAdapter?.specifiedKeys || {},
-        requiredKeys: requiredKeys,
+      for (const key in updatedUsedAdapter.requiredKeys) {
+        if (!updatedUsedAdapter.specifiedKeys[key]) {
+          const description = updatedUsedAdapter.requiredKeys[key]
+          notSpecifiedKeys.push({ key, description })
+        }
       }
 
-      if (usedAdapter) {
-        config.userConfig.usedAdapters = config.userConfig.usedAdapters.filter(
-          (x) => x.name !== usedAdapter.name
+      if (notSpecifiedKeys.length) {
+        console.log(
+          dedent(`
+            We have detected that following keys for the recently connected adapter
+            are not yet specified:
+          `) + '\n'
         )
-      }
 
-      config.userConfig.usedAdapters.push(updatedUsedAdapter)
+        notSpecifiedKeys.forEach(({ key, description }) =>
+          console.log(key + ': ' + description)
+        )
+
+        console.log('')
+
+        const answer = await askQuestion(
+          dedent(`
+              You can specify them manually later at the ${config.resources.usedAdaptersFilePath}
+              But would you like to specify those keys one by one right now? y/n
+          `)
+        )
+
+        if (answer.trim() === 'y') {
+          for (const { key, description } of notSpecifiedKeys) {
+            const secret = await askQuestion(`${key}: ${description}`)
+            updatedUsedAdapter.specifiedKeys[key] = secret
+          }
+        }
+      }
 
       fs.writeFileSync(
         config.resources.usedAdaptersFilePath,
         JSON.stringify(config.userConfig.usedAdapters)
       )
-
-      const { name, version } = updatedUsedAdapter
-
-      if (argv.flags.silent !== true) {
-        console.log(
-          `\nYour adapter ${name}@${version} had been succesfully connected!\n`
-        )
-
-        const notSpecifiedKeys: Array<{ key: string; description?: string }> =
-          []
-
-        for (const key in updatedUsedAdapter.requiredKeys) {
-          if (!updatedUsedAdapter.specifiedKeys[key]) {
-            const description = updatedUsedAdapter.requiredKeys[key]
-            notSpecifiedKeys.push({ key, description })
-          }
-        }
-
-        if (notSpecifiedKeys.length) {
-          console.log(
-            dedent(`
-            We have detected that following keys for the recently connected adapter
-            are not yet specified:
-          `) + '\n'
-          )
-
-          notSpecifiedKeys.forEach(({ key, description }) =>
-            console.log(key + ': ' + description)
-          )
-
-          console.log('')
-
-          const answer = await askQuestion(
-            dedent(`
-              You can specify them manually later at the ${config.resources.usedAdaptersFilePath}
-              But would you like to specify those keys one by one right now? y/n
-          `)
-          )
-
-          if (answer.trim() === 'y') {
-            for (const { key, description } of notSpecifiedKeys) {
-              const secret = await askQuestion(`${key}: ${description}`)
-              updatedUsedAdapter.specifiedKeys[key] = secret
-            }
-          }
-        }
-
-        fs.writeFileSync(
-          config.resources.usedAdaptersFilePath,
-          JSON.stringify(config.userConfig.usedAdapters)
-        )
-      }
-    }
-
-    if (argv.flags.list) {
-      if (argv.flags.silent) {
-        throw new SpadarError(
-          `The --list and --silent flags are incompatible because --list log can not be silent`
-        )
-      }
-
-      // TODO: log if connected adapter could be used in spadar cli chat
-      //       based on the provided schema
     }
   }
-)
+
+  if (flags.list) {
+    if (flags.silent) {
+      throw new SpadarError(
+        `The --list and --silent flags are incompatible because --list log can not be silent`
+      )
+    }
+
+    // TODO: log if connected adapter could be used in spadar cli chat
+    //       based on the provided schema
+  }
+}
