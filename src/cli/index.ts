@@ -20,13 +20,17 @@ function cliRouter(argv: string[]) {
         `Only --help or -h command are allowed at the level`
       )
     }
-
     // FIXME: make help for the `spadar` cli root layer
     console.log('Help is under construction')
   }
 
   if (params[0] === 'chat') {
-    runChat({})
+    const flags = collectFlags(
+      { model: { type: 'string' }, fromClipboard: { type: 'boolean' } },
+      params
+    )
+
+    runChat(flags)
     return
   }
 
