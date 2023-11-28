@@ -35,34 +35,6 @@ export const getCLIPipeMessege = (): Promise<string> =>
     process.stdin.on('end', () => resolve(message))
   })
 
-// FIXME: use `resolvePath` function instead
-//        mixing file existence check with a path
-//        resolution was a mistake
-export const getAdapterModuleAbsolutePath = (relativePath: string): string => {
-  if (relativePath[0] === '/') {
-    throw new SpadarError(`
-      The given path "${relativePath}" is absolute, we expect
-      relative path as input of "validateFileRelativePath" function
-    `)
-  }
-
-  // TODO: now one can apply spadar cli command only
-  //       if current path is the root of the adapter
-  //       module source but we could find the project
-  //       root directory from its nested directories
-  const currentPath = process.cwd() + '/'
-  const supposedFilePath =
-    relativePath === '.' ? currentPath : currentPath + relativePath
-
-  if (fs.existsSync(supposedFilePath) === false) {
-    throw new SpadarError(`
-      The "${supposedFilePath}" file is not found
-    `)
-  }
-
-  return supposedFilePath
-}
-
 /**
  * Resolve the absolute path from the given path.
  * Trailing forward slash (`/`) will be removed
@@ -106,8 +78,8 @@ export const resolvePath = (fileOrDirPath: string): string => {
       throw new SpadarError(`Invalid path format: "${trimmed}"`)
     }
 
-    return removeTrailingSlash(process.cwd + trimmed.slice(1))
+    return removeTrailingSlash(process.cwd() + trimmed.slice(1))
   }
 
-  return removeTrailingSlash(process.cwd + trimmed)
+  return removeTrailingSlash(process.cwd() + '/' + trimmed)
 }

@@ -3,12 +3,30 @@ import fs from 'fs'
 import path from 'path'
 import { command } from 'cleye'
 
+import { SpadarError } from '../utils/error'
 import { schemaToAdapterFiles } from '../utils/schema'
-import { getAdapterModuleAbsolutePath } from '../utils/command-line'
+import { resolvePath } from '../utils/command-line'
 import { askQuestion } from '../utils/interactive-cli'
 
 import config, { UsedAdapter } from '../config'
 import * as I from '../types'
+
+const getAdapterByPath = (
+  path: string
+): { adapterAbsolutePath: string; adapter: I.Adapter } => {
+  const adapterModulePath = resolvePath(path)
+
+  if (fs.existsSync(adapterModulePath) !== true) {
+    throw new SpadarError(
+      `Could't find adapter entry point: ${adapterModulePath}`
+    )
+  }
+
+  const adapter = require(adapterModulePath + config.adapter.adapterEntryPoint)
+    .default as I.Adapter
+
+  return { adapter, adapterAbsolutePath: adapterModulePath }
+}
 
 export default command(
   {
@@ -52,15 +70,20 @@ export default command(
     //       work with each other we should throw an error
 
     if (argv.flags.generate) {
-      const shemaFilePath = getAdapterModuleAbsolutePath(
-        config.adapter.schemaFilePath
-      )
+      const schemaFilePath = resolvePath(config.adapter.schemaFilePath)
+      const packageJSONFilePath = resolvePath(config.adapter.packageJSON)
 
-      const packageJSONFilePath = getAdapterModuleAbsolutePath(
-        config.adapter.packageJSON
-      )
+      if (fs.existsSync(schemaFilePath) !== true) {
+        throw new SpadarError(`Could't find schema file at: ${schemaFilePath}`)
+      }
 
-      const schema = require(shemaFilePath).default as I.ConnectorSchema[]
+      if (fs.existsSync(packageJSONFilePath) !== true) {
+        throw new SpadarError(
+          `Could't find package.json file at: ${schemaFilePath}`
+        )
+      }
+
+      const schema = require(schemaFilePath).default as I.ConnectorSchema[]
       const adapterPackageJSON = require(packageJSONFilePath) as {
         name: string
         version: string
@@ -119,16 +142,9 @@ export default command(
       process.exit(0)
     }
 
+    // TODO: support connection of the multiple adapters at once
     if (argv.flags.use) {
-      // TODO: support connection of the multiple adapters at once
-
-      const isRelativePath = argv.flags.use[0] === '.'
-      const adapterModulePath = isRelativePath
-        ? getAdapterModuleAbsolutePath(argv.flags.use)
-        : argv.flags.use
-
-      const adapter = require(adapterModulePath +
-        config.adapter.adapterEntryPoint).default as I.Adapter
+      const { adapter, adapterAbsolutePath } = getAdapterByPath(argv.flags.use)
 
       const usedAdapter = config.userConfig.usedAdapters.find(
         (x) => x.name === adapter.name
@@ -148,7 +164,7 @@ export default command(
       const updatedUsedAdapter: UsedAdapter = {
         name: adapter.name,
         version: adapter.version,
-        path: adapterModulePath,
+        path: adapterAbsolutePath,
         specifiedKeys: usedAdapter?.specifiedKeys || {},
         requiredKeys: requiredKeys,
       }
@@ -216,9 +232,18 @@ export default command(
           config.resources.usedAdaptersFilePath,
           JSON.stringify(config.userConfig.usedAdapters)
         )
-        // TODO: log if connected adapter could be used in spadar cli chat
-        //       based on the provided schema
       }
+    }
+
+    if (argv.flags.list) {
+      if (argv.flags.silent) {
+        throw new SpadarError(
+          `The --list and --silent flags are incompatible because --list log can not be silent`
+        )
+      }
+
+      // TODO: log if connected adapter could be used in spadar cli chat
+      //       based on the provided schema
     }
   }
 )

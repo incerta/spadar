@@ -1,13 +1,6 @@
 import dedent from 'dedent'
 import * as I from './types'
 
-type Requirement = {
-  description: string
-  schema: I.TransformationIOSchema[]
-}
-
-type Feature = { description: string; requirements: Requirement[] }
-
 export const chatMessageUnit: I.UnitSchema = {
   id: 'chatMessage',
   role: {
@@ -18,7 +11,7 @@ export const chatMessageUnit: I.UnitSchema = {
   payload: 'string',
 }
 
-const chatRequirements: Requirement[] = [
+const chatRequirements: I.Requirement[] = [
   {
     description: 'Multi message conversation with stream output',
     schema: [
@@ -63,7 +56,7 @@ const chatRequirements: Requirement[] = [
   },
 ]
 
-const requirements: Feature[] = [
+const requirements: I.Feature[] = [
   {
     description: 'Spadar CLI chat',
     requirements: chatRequirements,

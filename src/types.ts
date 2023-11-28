@@ -281,3 +281,22 @@ export type Adapter = {
   schema: ConnectorSchema[]
   connectors: { [connectorId: string]: unknown }
 }
+
+/**
+ * Each requirement should handle specific feature of
+ * the adapter consumer module and therefore must be
+ * described. The specific IO schema can have optional
+ * description on its own
+ **/
+export type Requirement = {
+  description: string
+  schema: TransformationIOSchema[]
+  required?: boolean
+}
+
+/**
+ * The adapter consumer could specify the schema requirements
+ * for the adapter consumer features using of which the adapter
+ * creator can support required units and IO specifics
+ **/
+export type Feature = { description: string; requirements: Requirement[] }

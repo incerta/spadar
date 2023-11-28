@@ -463,8 +463,6 @@ export const getConnectorFiles = (
 }
 
 // FIXME: add unit tests for the function
-// FIXME: generate adaterEntryPoint file
-// FIXME: generate initial `schema` signature
 export const schemaToAdapterFiles = (
   adapterModule: {
     name: string
