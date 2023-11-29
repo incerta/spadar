@@ -84,10 +84,40 @@ export const resolvePath = (fileOrDirPath: string): string => {
   return removeTrailingSlash(process.cwd() + '/' + trimmed)
 }
 
-export const collectFlags = (
-  schema: Record<string, I.PropSchema>,
+type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
+  required: true
+}
+  ? U
+  : U | undefined
+
+// FIXME: we should assume that if Buffer property type is came from
+//        the cli flags it must be either file path or URL to the file
+//        so we need a function `reduceToBuffer(urlOrFilePath: string)`
+//        which should be used within `collectFlags` function for the `Buffer` case
+export const collectFlags = <T extends Record<string, I.PropSchema>>(
+  schema: T,
   argv: string[]
-): Record<string, string | number | boolean | Buffer> => {
+): {
+  [k in keyof T]: T[k] extends I.StringPropSchema
+    ? OptionalizeProp<T[k], string>
+    : T[k] extends I.NumberPropSchema
+    ? OptionalizeProp<T[k], number>
+    : T[k] extends I.BooleanPropSchema
+    ? OptionalizeProp<T[k], boolean>
+    : T[k] extends I.BufferPropSchema
+    ? OptionalizeProp<T[k], Buffer>
+    : T[k] extends I.StringUnionPropSchema
+    ? OptionalizeProp<T[k], T[k]['of'][0]>
+    : T[k] extends 'string'
+    ? string
+    : T[k] extends 'number'
+    ? number
+    : T[k] extends 'boolean'
+    ? boolean
+    : T[k] extends 'Buffer'
+    ? Buffer
+    : never
+} => {
   const result: Record<string, string | number | boolean | Buffer> = {}
 
   for (const key in schema) {

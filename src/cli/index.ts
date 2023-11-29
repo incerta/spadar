@@ -26,7 +26,12 @@ function cliRouter(argv: string[]) {
 
   if (params[0] === 'chat') {
     const flags = collectFlags(
-      { model: { type: 'string' }, fromClipboard: { type: 'boolean' } },
+      {
+        model: { type: 'stringUnion', of: ['one', 'two'] },
+        fromClipboard: { type: 'boolean' },
+        help: { type: 'boolean' },
+        h: { type: 'boolean' },
+      },
       params
     )
 
