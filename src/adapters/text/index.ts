@@ -1,3 +1,4 @@
+// @ts-nocheck
 import debugAdapter from './debug-adapter'
 import openAIAdapter from './openai'
 import * as I from '../../types'

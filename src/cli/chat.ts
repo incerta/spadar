@@ -4,7 +4,7 @@ import * as cliColor from 'kolorist'
 import * as cmd from '../utils/command-line'
 import { getUserPrompt } from '../utils/interactive-cli'
 import { complitionStreamFactory } from '../utils/text-generator'
-import { getTextAdapter } from '../utils/adapter'
+import { getTextAdapter } from '../utils/deprecated-adapter'
 
 type Message = {
   role: 'system' | 'assistant' | 'user'

@@ -1,57 +1,16 @@
-import fs from 'fs'
 import dotenv from 'dotenv'
+// FIXME: str? why, just why? figure out better name for
+//        for string transformations and other string related stuff
+//        `string` for example
 import { toKebabCase } from './utils/str'
+import { getUsedAdapters, getExternalAPI } from './utils/adapter'
 import { SpadarError } from './utils/error'
 import { resolvePath } from './utils/command-line'
 import { version } from '../package.json'
 
-export type UsedAdapter = {
-  /**
-   * The adapter module name
-   **/
-  name: string
-
-  /**
-   * The adapter module version
-   **/
-  version: string
-
-  /**
-   * Absolute path to the adapter module
-   **/
-  path: string
-
-  /**
-   * The record key is secret Key and record value is its description
-   **/
-  requiredKeys: Record<string, string>
-
-  /**
-   * Keys that actually specified
-   **/
-  specifiedKeys: Record<string, string>
-}
-
-export type UserConfig = {
-  usedAdapters: UsedAdapter[]
-}
-
+// FIXME: remove `dotenv` dependency when OpenAI api will
+//        be abstracted to external adapter
 dotenv.config()
-
-const REQUIRED_ENVS = ['OPEN_AI_API_KEY']
-
-const { OPEN_AI_API_KEY, SPADAR_RESOURCES_DIR } = process.env
-
-if (!OPEN_AI_API_KEY) {
-  const missingEnvs = REQUIRED_ENVS.filter((x) => !process.env[x]).join(', ')
-  throw new Error(
-    'Some of .env required variables has not been set\n' +
-      `\n    List of missing value identifiers: ${missingEnvs}` +
-      '\n    Checkout .env.example at the root of the app' +
-      '\n    It is also might be the case that you are trying to run script from the wrong place' +
-      '\n    Try to run the program from the path where .env file is present\n'
-  )
-}
 
 // TODO: if spadar is installed as local module
 //       the resources directory should be identified
@@ -59,6 +18,8 @@ if (!OPEN_AI_API_KEY) {
 //       object `resourcesDirectory` property value
 
 const resourcesDirectory = ((): string => {
+  const { SPADAR_RESOURCES_DIR } = process.env
+
   if (SPADAR_RESOURCES_DIR) return resolvePath(SPADAR_RESOURCES_DIR)
 
   // TODO: check if `.bashrc`, `.bash_profile` or `.zshrc` files exists
@@ -74,29 +35,10 @@ const resourcesDirectory = ((): string => {
   `)
 })()
 
-const userConfig = ((): UserConfig => {
-  const usedAdapters = ((): UserConfig['usedAdapters'] => {
-    fs.mkdirSync(resourcesDirectory, { recursive: true })
+const usedAdapters = getUsedAdapters(resourcesDirectory)
 
-    const usedAdaptersFilePath = resourcesDirectory + '/used-adapters.json'
-
-    if (fs.existsSync(usedAdaptersFilePath) === false) {
-      fs.writeFileSync(usedAdaptersFilePath, '[]')
-      return []
-    }
-
-    try {
-      return JSON.parse(fs.readFileSync(usedAdaptersFilePath, 'utf-8'))
-    } catch (e) {
-      console.error(e)
-      throw new SpadarError(
-        `Failed to parse JSON file: ${usedAdaptersFilePath}`
-      )
-    }
-  })()
-
-  return { usedAdapters }
-})()
+// FIXME: create actual `externalAPI` instead of `AvailableAdapter` list
+const externalAPI = getExternalAPI(usedAdapters)
 
 export default {
   /* Spadar module version */
@@ -113,8 +55,19 @@ export default {
     usedAdaptersFilePath: resourcesDirectory + '/used-adapters.json',
   },
 
-  /* The user config formed based on `resourcesDirectory` files */
-  userConfig,
+  /**
+   *
+   **/
+  usedAdapters,
+
+  /**
+   * Based on `usedAdapters` we create intermediate API which uses specified
+   * keys by the user in order to omit `keys` argument at each connector IO function
+   *
+   * Result API should exclude connector IO functions that not yet specified
+   * (connector signature is not mutated by connector API file)
+   **/
+  externalAPI,
 
   /* All paths are relative to the root of ADAPTER module source */
   adapter: {
@@ -160,5 +113,5 @@ export default {
   } as const,
 
   // TODO: should be removed from the config
-  openAI: { apiKey: OPEN_AI_API_KEY },
+  openAI: { apiKey: process.env.OPEN_AI_API_KEY },
 }

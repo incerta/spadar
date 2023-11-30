@@ -1,89 +1,131 @@
-import { selectLLMAdapter } from '../adapters/text'
+import fs from 'fs'
+
+import { SpadarError } from './error'
+import { resolvePath } from './command-line'
+
 import * as I from '../types'
 
-export const getTextAdapter = (
-  model: string,
-  connectorIdOverride?: string
-): any => {
-  if (connectorIdOverride) {
-    const requestedAdapter = selectLLMAdapter.byId.get(connectorIdOverride)
+const ADAPTER_ENTRY_POINT_PATH = 'src/adapter.ts'
 
-    if (!requestedAdapter) {
-      throw Error(
-        `Could't find given adapter: "${connectorIdOverride}".${selectLLMAdapter.availableAdaptersMessage}`
-      )
-    }
+export type UsedAdapter = {
+  /**
+   * The adapter module name
+   **/
+  name: string
 
-    return requestedAdapter
-  }
+  /**
+   * The adapter module version
+   **/
+  version: string
 
-  const selectedAdapter = selectLLMAdapter.byModelId.get(model)
+  /**
+   * Absolute path to the adapter module
+   **/
+  path: string
 
-  if (!selectedAdapter) {
-    throw Error(
-      `Could't find adapter for the given model: "${model}".${selectLLMAdapter.supportedModelsMessage}`
+  /**
+   * The record key is secret Key and record value is its description
+   **/
+  requiredKeys: Record<string, string>
+
+  /**
+   * Keys that actually specified
+   **/
+  specifiedKeys: Record<string, string>
+}
+
+type AvailableAdapter = UsedAdapter & {
+  /**
+   * Is all `requiredKeys` are specified in `specifiedKeys`
+   *
+   * TODO: we should resolve `ready` state of the specific
+   *       connector because keys actually connector specific
+   **/
+  ready: boolean
+
+  /**
+   * Generic API for the adapter. If it is not present
+   * that means we can't access the adapter entry point file
+   * by the given UsedAdapter path
+   **/
+  adapter?: I.Adapter
+}
+
+// TODO: in the context of locally installed `spadar` module
+//       the adapter entry point might changed. Currently we
+//       testing hacky way of adapter connection through the
+//       `spadar adapter --use` command
+export const getAdapterByPath = (
+  path: string
+): { adapterAbsolutePath: string; adapter: I.Adapter } => {
+  // TODO: the absolute path should be resolved outside of the function
+  //       we don't really need to get it here and pass through another object
+  const adapterModulePath = resolvePath(path)
+
+  if (fs.existsSync(adapterModulePath) !== true) {
+    throw new SpadarError(
+      `Could't find adapter entry point: ${adapterModulePath}`
     )
   }
 
-  return selectedAdapter
+  const adapterEntryPointPath =
+    adapterModulePath + '/' + ADAPTER_ENTRY_POINT_PATH
+
+  const adapter = require(adapterEntryPointPath).default as I.Adapter
+
+  return { adapter, adapterAbsolutePath: adapterModulePath }
 }
 
-const getFormattedMessage = (title: string, items: string[]) =>
-  '\n\n' + title + '\n\n' + items.map((x) => '  - ' + x).join(',\n') + '\n'
+export const getUsedAdapters = (resourcesDirectory: string): UsedAdapter[] => {
+  fs.mkdirSync(resourcesDirectory, { recursive: true })
+  const usedAdaptersFilePath = resourcesDirectory + '/used-adapters.json'
 
-type InferSetType<T> = T extends Set<infer U> ? U : never
-
-type AdapterSelectors<T extends I.AdapterType> = {}
-
-// const adapterSelectorsCache =
-
-export const collectAdapters = <T extends I.AdapterType, A extends I.Adapter>(
-  adapterType: T,
-  builtInAdapters: A extends { type: T } ? A : never
-) => {
-  // TODO: use caching tool like `splendid-ui` for caching
-  //
-  // cache invalidation strategy:
-  // if `RESOURCES_DIRECTORY` files are not changed
-  // return cached `adapterSelectors` object right away
-  // or cache result of the `getAdapterSelectors` in
-  // `RESOURCES_DIRECTORY/.cache/adapters/${adapterType}
-  //
-
-  const cache = (() => {})()
-
-  const externalAdapters: I.TextAdapter[] = (() => {
-    // TODO: plan to put external adapter resolution logic here
+  if (fs.existsSync(usedAdaptersFilePath) === false) {
+    fs.writeFileSync(usedAdaptersFilePath, '[]')
     return []
-  })()
+  }
 
-  const allAdapters = [...externalAdapters, ...builtInAdapters]
+  try {
+    return JSON.parse(
+      fs.readFileSync(usedAdaptersFilePath, 'utf-8')
+    ) as UsedAdapter[]
+  } catch (e) {
+    throw new SpadarError(`Failed to parse JSON file: ${usedAdaptersFilePath}`)
+  }
+}
 
-  const byId = new Map<AdapterList[0]['id'], AdapterList[0]>()
-  const byModelId = new Map<
-    InferSetType<AdapterList[0]['for']>,
-    AdapterList[0]
-  >()
+const hasAllKeys = (
+  requiredKey: Record<string, string>,
+  specifiedKeys: Record<string, string>
+) => {
+  for (const key in requiredKey) {
+    if (typeof specifiedKeys[key] !== 'string') {
+      return false
+    }
+  }
 
-  const supportedModelIdSet = new Set<I.TextModelId>()
-  const supportedconnectorIdSet = new Set<I.TextconnectorId>()
+  return true
+}
 
-  allAdapters.forEach((adapter) => {
-    supportedconnectorIdSet.add(adapter.id)
-    byId.set(adapter.id, adapter)
+// FIXME: create actual `externalAPI` instead of `AvailableAdapter` list
+export const getExternalAPI = (
+  usedAdapters: UsedAdapter[]
+): AvailableAdapter[] => {
+  const availableAdapters: AvailableAdapter[] = []
 
-    adapter.for.forEach((model) => {
-      supportedModelIdSet.add(model)
-      byModelId.set(model, adapter)
-    })
-  })
+  for (const usedAdapter of usedAdapters) {
+    const adapter = fs.existsSync(usedAdapter.path)
+      ? getAdapterByPath(usedAdapter.path).adapter
+      : undefined
 
-  const supportedModelsMessage = getFormattedMessage('Supported models:', [
-    ...supportedModelIdSet,
-  ])
-  const availableAdaptersMessage = getFormattedMessage('Availabled adapters:', [
-    ...supportedconnectorIdSet,
-  ])
+    const availableAdapter: AvailableAdapter = {
+      ...usedAdapter,
+      adapter,
+      ready: hasAllKeys(usedAdapter.requiredKeys, usedAdapter.specifiedKeys),
+    }
 
-  return { byId, byModelId, supportedModelsMessage, availableAdaptersMessage }
+    availableAdapters.push(availableAdapter)
+  }
+
+  return availableAdapters
 }

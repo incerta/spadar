@@ -6,27 +6,10 @@ import { SpadarError } from '../utils/error'
 import { schemaToAdapterFiles } from '../utils/schema'
 import { resolvePath } from '../utils/command-line'
 import { askQuestion } from '../utils/interactive-cli'
+import { getAdapterByPath } from '../utils/adapter'
 
-import config, { UsedAdapter } from '../config'
+import config from '../config'
 import * as I from '../types'
-
-const getAdapterByPath = (
-  path: string
-): { adapterAbsolutePath: string; adapter: I.Adapter } => {
-  const adapterModulePath = resolvePath(path)
-
-  if (fs.existsSync(adapterModulePath) !== true) {
-    throw new SpadarError(
-      `Could't find adapter entry point: ${adapterModulePath}`
-    )
-  }
-
-  const adapter = require(adapterModulePath +
-    '/' +
-    config.adapter.adapterEntryPoint).default as I.Adapter
-
-  return { adapter, adapterAbsolutePath: adapterModulePath }
-}
 
 export const runAdapter = async (flags: {
   generate?: boolean
@@ -199,7 +182,7 @@ export const runAdapter = async (flags: {
 
       fs.writeFileSync(
         config.resources.usedAdaptersFilePath,
-        JSON.stringify(config.userConfig.usedAdapters, null, 2)
+        JSON.stringify(config.usedAdapters, null, 2)
       )
     }
   }

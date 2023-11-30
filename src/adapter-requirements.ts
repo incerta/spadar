@@ -58,7 +58,9 @@ const chatRequirements: I.Requirement[] = [
 
 const requirements: I.Feature[] = [
   {
-    description: 'Spadar CLI chat',
+    id: 'Spadar CLI chat',
+    description:
+      'The usage of spadar cli chat will be available if one of the requirements will be satisfied',
     requirements: chatRequirements,
   },
 ]

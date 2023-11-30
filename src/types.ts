@@ -296,7 +296,10 @@ export type Requirement = {
 
 /**
  * The adapter consumer could specify the schema requirements
- * for the adapter consumer features using of which the adapter
- * creator can support required units and IO specifics
+ * for adapter connector schema
  **/
-export type Feature = { description: string; requirements: Requirement[] }
+export type Feature = {
+  id: string
+  description: string
+  requirements: Requirement[]
+}

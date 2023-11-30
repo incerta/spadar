@@ -35,6 +35,10 @@ export const getCLIPipeMessege = (): Promise<string> =>
     process.stdin.on('end', () => resolve(message))
   })
 
+// TODO: consider moving the `resolvePath` function from `command-line.ts`
+//       somewhere else because path resolution is not directly connected
+//       to command line and has much broader scope
+
 /**
  * Resolve the absolute path from the given path.
  * Trailing forward slash (`/`) will be removed
@@ -90,6 +94,11 @@ type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
   ? U
   : U | undefined
 
+// TODO: support shorthand aliases for the flags, for example flag `--help`
+//       expected to have `-h` alias
+
+// TODO: add unit tests for the `collectFlags` function
+
 // FIXME: we should assume that if Buffer property type is came from
 //        the cli flags it must be either file path or URL to the file
 //        so we need a function `reduceToBuffer(urlOrFilePath: string)`
@@ -118,7 +127,8 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
     ? Buffer
     : never
 } => {
-  const result: Record<string, string | number | boolean | Buffer> = {}
+  // eslint-disable-next-line
+  const result: any = {}
 
   for (const key in schema) {
     const propSchema = schema[key]

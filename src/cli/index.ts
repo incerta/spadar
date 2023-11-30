@@ -1,3 +1,4 @@
+import config from '../config'
 import { SpadarError } from '../utils/error'
 import { collectFlags } from '../utils/command-line'
 
@@ -30,10 +31,16 @@ function cliRouter(argv: string[]) {
         model: { type: 'stringUnion', of: ['one', 'two'] },
         fromClipboard: { type: 'boolean' },
         help: { type: 'boolean' },
-        h: { type: 'boolean' },
       },
       params
     )
+
+    if (flags.help) {
+      // FIXME: show list of the available adapter -> connectors
+      //        that support at least one of the cli chat requirements
+      console.log(config.externalAPI)
+      return
+    }
 
     runChat(flags)
     return
