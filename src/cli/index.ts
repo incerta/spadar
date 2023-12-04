@@ -1,9 +1,13 @@
+// TODO move file to `src/cli-entry-point.ts`
 import config from '../config'
 import { SpadarError } from '../utils/error'
 import { collectFlags } from '../utils/command-line'
+import adapterRequirements from '../adapter-requirements'
 
 import { runChat } from './chat'
 import { runAdapter } from './adapter'
+
+import * as I from '../types'
 
 /* Set terminal tab title */
 process.stdout.write('\x1b]0;Spadar\x07')
@@ -38,7 +42,53 @@ function cliRouter(argv: string[]) {
     if (flags.help) {
       // FIXME: show list of the available adapter -> connectors
       //        that support at least one of the cli chat requirements
-      console.log(config.externalAPI)
+
+      if (config.usedAdapters.length === 0) {
+        throw new SpadarError(`
+          There is no used adapters detected.
+          Install adapter that satisfy at least one of
+          cli chat requirements. And connect it to spadar
+          by "spadar adapter --use $ADAPTER_MODULE_NAME_OR_PATH" cmd
+        `)
+      }
+
+      let log = ''
+
+      const [chatFeature] = adapterRequirements
+
+      log += chatFeature.id + '\n\n'
+      log += chatFeature.description + '\n\n'
+
+      const matches: Array<{
+        featureId: string
+        requirementId: string
+        requirementIndex: number
+        adapterName: string
+        connectorId: string
+        transformation: I.Transformation
+        transferMethod: I.TransferMethod
+        isNotImplemented: boolean
+      }> = []
+
+      // TODO: what we want to display?
+      //       spadar chat $ADAPTER_MODULE_NAME $CONNECTOR_ID $TRANSFER_METHOD
+      //       available based on the used adapters
+
+      for (const requirement of chatFeature.requirements) {
+        for (const availableAdapter of config.externalAPI) {
+          if (!availableAdapter.adapter) {
+            continue
+          }
+
+          for (const connectorSchema of availableAdapter.adapter.schema) {
+            for (const connectorTransformationSchema of connectorSchema.supportedIO) {
+              // TODO: write function
+            }
+          }
+        }
+      }
+
+      console.log(log)
       return
     }
 

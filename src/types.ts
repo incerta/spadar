@@ -48,6 +48,9 @@ export type BufferPropSchema = PropSchemaBase<Buffer> & {
   /* Buffer.length */
   minLength?: number /* >= */
   maxLength?: number /* <= */
+
+  // TODO: allow to add `default: string` value which is should be
+  //       absolute path to the file or HTTP link to desired resource
 }
 
 /**
@@ -184,16 +187,7 @@ export type IOUnitSchema = UnitSchema | [UnitSchema]
  * result function type:
  *   (secrets: Secrets, options: Options, unit: string) => string
  **/
-export type IOSchema = [
-  inputUnit: IOUnitSchema,
-  outputUnit: IOUnitSchema,
-
-  /**
-   * The description will be used in the adapter requirements
-   * and adapter -> spadar app compatibility logs
-   **/
-  description?: string
-]
+export type IOSchema = [inputUnit: IOUnitSchema, outputUnit: IOUnitSchema]
 
 export type TransferMethod =
   | 'streamInStaticOut'
@@ -260,6 +254,14 @@ export type ConnectorSchema = {
    * Types of IO following CONNECTOR going to support
    **/
   supportedIO: TransformationIOSchema[]
+
+  // TODO: add `modelNameToPayloadLimit: Record<string, number>` property
+  //       as upper bound of payload size for a singular API function call
+  //       we support `max/max` on `ObjectSchemaProp` level but it is not
+  //       enough when we taking into the account ORDER as function input type
+  //       (array of units specified by user). Since connector schema is just
+  //       a bunch of models that share same `options` and `keys` schema it
+  //       would be ok to have the limits definition on this level.
 }
 
 /* Broadcast streams using the following format */
@@ -283,20 +285,28 @@ export type Adapter = {
 }
 
 /**
+ * TODO: specification for external usage is not yet ready
+ *
  * Each requirement should handle specific feature of
  * the adapter consumer module and therefore must be
- * described. The specific IO schema can have optional
- * description on its own
+ * described.
+ *
+ * The adapter connector schema must support everything
+ * that specified in requirement schema in order to be
+ * considered as compatible
  **/
 export type Requirement = {
+  id: string
   description: string
-  schema: TransformationIOSchema[]
+  schema: TransformationIOSchema
   required?: boolean
 }
 
 /**
- * The adapter consumer could specify the schema requirements
- * for adapter connector schema
+ * TODO: specification for external usage is not yet ready
+ *
+ * Feature is something that should work if one or many
+ * adapters satisfy one ore many requirement schemas
  **/
 export type Feature = {
   id: string

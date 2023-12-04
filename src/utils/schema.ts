@@ -520,3 +520,279 @@ export const schemaToAdapterFiles = (
 
   return adapterFiles
 }
+
+export const getIsPropSchemaMatch = (
+  requirement: I.PropSchema,
+  target: I.PropSchema
+): boolean => {
+  if (typeof requirement === 'object') {
+    if (typeof target === 'object') {
+      if (target.type !== requirement.type) {
+        return false
+      }
+
+      if (requirement.required) {
+        if (!target.required && target.default === undefined) {
+          return false
+        }
+      }
+
+      switch (requirement.type) {
+        case 'string': {
+          if (target.type !== 'string') {
+            return false
+          }
+
+          if (typeof requirement.minLength === 'number') {
+            if (typeof target.minLength !== 'number') {
+              return false
+            }
+
+            if (requirement.minLength > target.minLength) {
+              return false
+            }
+          }
+
+          if (typeof requirement.maxLength === 'number') {
+            if (typeof target.maxLength !== 'number') {
+              return false
+            }
+
+            if (requirement.maxLength < target.maxLength) {
+              return false
+            }
+          }
+
+          return true
+        }
+
+        case 'number': {
+          if (target.type !== 'number') {
+            return false
+          }
+
+          if (typeof requirement.min === 'number') {
+            if (typeof target.min !== 'number') {
+              return false
+            }
+
+            if (requirement.min > target.min) {
+              return false
+            }
+          }
+
+          if (typeof requirement.max === 'number') {
+            if (typeof target.max !== 'number') {
+              return false
+            }
+
+            if (requirement.max < target.max) {
+              return false
+            }
+          }
+
+          return true
+        }
+
+        case 'boolean': {
+          if (target.type !== 'boolean') {
+            return false
+          }
+
+          return true
+        }
+
+        case 'Buffer': {
+          if (target.type !== 'Buffer') {
+            return false
+          }
+
+          if (typeof requirement.minLength === 'number') {
+            if (typeof target.minLength !== 'number') {
+              return false
+            }
+
+            if (requirement.minLength > target.minLength) {
+              return false
+            }
+          }
+
+          if (typeof requirement.maxLength === 'number') {
+            if (typeof target.maxLength !== 'number') {
+              return false
+            }
+
+            if (requirement.maxLength < target.maxLength) {
+              return false
+            }
+          }
+
+          return true
+        }
+
+        case 'stringUnion': {
+          if (target.type !== 'stringUnion') {
+            return false
+          }
+
+          const requirementOf = new Set(requirement.of)
+
+          return target.of.reduce<boolean>((acc, x) => {
+            if (requirementOf.has(x) === false) return false
+            return acc
+          }, true)
+        }
+      }
+    }
+
+    /* When target is RequiredPropSchema string */
+
+    switch (requirement.type) {
+      case 'string': {
+        if (target !== 'string') {
+          return false
+        }
+
+        if (typeof requirement.minLength === 'number') {
+          return false
+        }
+
+        if (typeof requirement.maxLength === 'number') {
+          return false
+        }
+
+        return true
+      }
+
+      case 'number': {
+        if (target !== 'number') {
+          return false
+        }
+
+        if (typeof requirement.min === 'number') {
+          return false
+        }
+
+        if (typeof requirement.max === 'number') {
+          return false
+        }
+
+        return true
+      }
+
+      case 'Buffer': {
+        if (target !== 'Buffer') {
+          return false
+        }
+
+        if (typeof requirement.minLength === 'number') {
+          return false
+        }
+
+        if (typeof requirement.maxLength === 'number') {
+          return false
+        }
+
+        return true
+      }
+
+      default: {
+        return requirement.type === target
+      }
+    }
+  }
+
+  if (typeof target === 'object') {
+    if (!target.required && target.default === undefined) {
+      return false
+    }
+
+    return target.type === requirement
+  }
+
+  return requirement === target
+}
+
+export const getIsObjectUnitSchemaMatch = (
+  requirement: I.ObjectUnitSchema,
+  target: I.ObjectUnitSchema
+): boolean => {
+  // FIXME: implement
+  throw Error('Not implemented')
+}
+
+export const getIsIOUnitSchemaMatch = (
+  requirement: I.IOUnitSchema,
+  target: I.IOUnitSchema
+): boolean => {
+  if (typeof requirement === 'object') {
+    if (Array.isArray(requirement)) {
+      if (typeof target !== 'object') {
+        return false
+      }
+
+      if (Array.isArray(target)) {
+        return getIsIOUnitSchemaMatch(requirement[0], target[0])
+      }
+
+      return false
+    }
+
+    // FIXME: implement
+    throw Error('Not implemented')
+  }
+
+  if (typeof target === 'object') {
+    return false
+  }
+
+  return requirement === target
+}
+
+export const getIsIOSchemaMatch = (
+  requirement: I.IOSchema,
+  target: I.IOSchema
+): boolean => {
+  // FIXME: implement
+  throw Error('Not implemented')
+}
+
+export const getIsSchemaMatchRequirement = (
+  requirement: I.TransformationIOSchema,
+  target: I.TransformationIOSchema
+): boolean => {
+  if (requirement.type !== target.type) {
+    return false
+  }
+
+  for (const x in requirement.io) {
+    const transferMethod = x as I.TransferMethod
+    const requirementTransferMethodIO = requirement.io[
+      transferMethod
+    ] as I.IOSchema[]
+    const targetTransferMethodIO = target.io[transferMethod]
+
+    if (typeof targetTransferMethodIO === 'undefined') {
+      return false
+    }
+
+    for (const requirementIOSchema of requirementTransferMethodIO) {
+      const hasMatch = targetTransferMethodIO.reduce<boolean>(
+        (acc, targetIOSchema) => {
+          const matchRequirements = getIsIOSchemaMatch(
+            requirementIOSchema,
+            targetIOSchema
+          )
+
+          if (matchRequirements === true) return true
+          return acc
+        },
+        false
+      )
+
+      if (hasMatch === false) return false
+    }
+  }
+
+  return true
+}
