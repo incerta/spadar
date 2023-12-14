@@ -59,7 +59,7 @@ it('generateIOPrimitive: staticInStaticOut', () => {
   })
 
   const customUnit: I.ObjectUnitSchema = {
-    id: 'custom',
+    unitId: { type: 'stringUnion', of: ['custom'], required: true },
     payload: 'string',
   }
 
@@ -148,7 +148,7 @@ it('generateIOPrimitive: staticInStreamOut', () => {
   })
 
   const customUnit: I.ObjectUnitSchema = {
-    id: 'custom',
+    unitId: { type: 'stringUnion', of: ['custom'], required: true },
     payload: 'string',
   }
 
@@ -237,7 +237,7 @@ it('generateIOPrimitive: streamInStaticOut', () => {
   })
 
   const customUnit: I.ObjectUnitSchema = {
-    id: 'custom',
+    unitId: { type: 'stringUnion', of: ['custom'], required: true },
     payload: 'string',
   }
 
@@ -326,7 +326,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
   })
 
   const customUnit: I.ObjectUnitSchema = {
-    id: 'custom',
+    unitId: { type: 'stringUnion', of: ['custom'], required: true },
     payload: 'string',
   }
 
@@ -381,7 +381,7 @@ it('generateIOPrimitive: streamInStreamOut', () => {
 
 it('unitSchemaToType: test all possilbe property types', () => {
   const customUnit: I.ObjectUnitSchema = {
-    id: 'custom',
+    unitId: { type: 'stringUnion', of: ['custom'], required: true },
     payload: 'string',
     stringPropertySchemaRequired: {
       type: 'string',
@@ -420,7 +420,7 @@ it('unitSchemaToType: test all possilbe property types', () => {
   expect(schema.unitSchemaToType(customUnit)).toBe(
     dedent(`
       export type CustomUnit = {
-        id: 'custom'
+        unitId: 'custom'
         payload: string
         stringPropertySchemaRequired: string
         stringPropertySchemaOptional?: string
@@ -601,14 +601,14 @@ it(`getConnectorFiles[typings|signature|connector]: schema with 'Buffer' and 'st
 
 it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
   const customUnitOne: I.ObjectUnitSchema = {
-    /* `id: 'customOne'` */
-    id: 'customOne',
+    /* `unitId: 'customOne'` */
+    unitId: { type: 'stringUnion', of: ['customOne'], required: true },
     /* `payload: string` */
     payload: 'string',
   }
 
   const customUnitTwo: I.ObjectUnitSchema = {
-    id: 'customTwo',
+    unitId: { type: 'stringUnion', of: ['customTwo'], required: true },
     payload: 'Buffer',
   }
 
@@ -664,12 +664,12 @@ it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
       }
 
       export type CustomOneUnit = {
-        id: 'customOne'
+        unitId: 'customOne'
         payload: string
       }
 
       export type CustomTwoUnit = {
-        id: 'customTwo'
+        unitId: 'customTwo'
         payload: Buffer
       }
 
@@ -709,56 +709,6 @@ it('getConnectorFiles.typings: schema with `ObjectUnitSchema` units', () => {
       export default Connector
   `)
   )
-})
-
-it(`getIsIOUnitSchemaMatch: singular 'string' | 'Buffer'`, () => {
-  expect(schema.getIsIOUnitSchemaMatch('string', 'string')).toBe(true)
-
-  expect(schema.getIsIOUnitSchemaMatch('string', 'Buffer')).toBe(false)
-  expect(schema.getIsIOUnitSchemaMatch('string', ['string'])).toBe(false)
-  expect(schema.getIsIOUnitSchemaMatch('string', ['Buffer'])).toBe(false)
-
-  expect(
-    schema.getIsIOUnitSchemaMatch('string', { id: 'x', payload: 'string' })
-  ).toBe(false)
-
-  expect(
-    schema.getIsIOUnitSchemaMatch('string', [{ id: 'x', payload: 'string' }])
-  ).toBe(false)
-
-  expect(schema.getIsIOUnitSchemaMatch('Buffer', 'Buffer')).toBe(true)
-
-  expect(schema.getIsIOUnitSchemaMatch('Buffer', 'string')).toBe(false)
-  expect(schema.getIsIOUnitSchemaMatch('Buffer', ['Buffer'])).toBe(false)
-  expect(schema.getIsIOUnitSchemaMatch('Buffer', ['string'])).toBe(false)
-
-  expect(
-    schema.getIsIOUnitSchemaMatch('Buffer', { id: 'x', payload: 'string' })
-  ).toBe(false)
-
-  expect(
-    schema.getIsIOUnitSchemaMatch('Buffer', [{ id: 'x', payload: 'string' }])
-  ).toBe(false)
-})
-
-it(`getIsIOUnitSchemaMatch: array 'string' | 'Buffer'`, () => {
-  expect(schema.getIsIOUnitSchemaMatch(['string'], ['string'])).toBe(true)
-  expect(schema.getIsIOUnitSchemaMatch(['string'], 'string')).toBe(false)
-  expect(
-    schema.getIsIOUnitSchemaMatch(['string'], { id: 'x', payload: 'string' })
-  ).toBe(false)
-  expect(
-    schema.getIsIOUnitSchemaMatch(['string'], [{ id: 'x', payload: 'string' }])
-  ).toBe(false)
-
-  expect(schema.getIsIOUnitSchemaMatch(['Buffer'], ['Buffer'])).toBe(true)
-  expect(schema.getIsIOUnitSchemaMatch(['Buffer'], 'Buffer')).toBe(false)
-  expect(
-    schema.getIsIOUnitSchemaMatch(['Buffer'], { id: 'x', payload: 'Buffer' })
-  ).toBe(false)
-  expect(
-    schema.getIsIOUnitSchemaMatch(['Buffer'], [{ id: 'x', payload: 'Buffer' }])
-  ).toBe(false)
 })
 
 it(`getIsPropSchemaMatch: RequiredPropSchema -> any`, () => {
@@ -1313,23 +1263,51 @@ it(`getIsPropSchemaMatch: StringUnionPropSchema -> any`, () => {
   ).toBe(false)
 })
 
-it.todo(
-  `getIsPropSchemaMatch: StringUnionPropSchema -> any (minLength & maxLength check)`
-)
-
-it.skip(`getIsObjectUnitSchemaMatch`, () => {
+it(`getIsPropSchemaMatch: any -> undefined`, () => {
+  expect(schema.getIsPropSchemaMatch({ type: 'string' }, undefined)).toBe(true)
+  expect(schema.getIsPropSchemaMatch({ type: 'number' }, undefined)).toBe(true)
+  expect(schema.getIsPropSchemaMatch({ type: 'boolean' }, undefined)).toBe(true)
+  expect(schema.getIsPropSchemaMatch({ type: 'Buffer' }, undefined)).toBe(true)
   expect(
-    schema.getIsObjectUnitSchemaMatch(
-      { id: 'x', payload: 'string' },
-      { id: 'x', payload: 'string' }
+    schema.getIsPropSchemaMatch({ type: 'stringUnion', of: ['x'] }, undefined)
+  ).toBe(true)
+
+  expect(
+    schema.getIsPropSchemaMatch({ type: 'string', default: 'x' }, undefined)
+  ).toBe(true)
+  expect(
+    schema.getIsPropSchemaMatch(
+      { type: 'string', required: true, default: 'x' },
+      undefined
     )
   ).toBe(true)
+
+  expect(
+    schema.getIsPropSchemaMatch({ type: 'string', required: true }, undefined)
+  ).toBe(false)
+  expect(
+    schema.getIsPropSchemaMatch({ type: 'number', required: true }, undefined)
+  ).toBe(false)
+  expect(
+    schema.getIsPropSchemaMatch({ type: 'boolean', required: true }, undefined)
+  ).toBe(false)
+  expect(
+    schema.getIsPropSchemaMatch({ type: 'Buffer', required: true }, undefined)
+  ).toBe(false)
+  expect(
+    schema.getIsPropSchemaMatch(
+      { type: 'stringUnion', of: ['x'], required: true },
+      undefined
+    )
+  ).toBe(false)
+
+  expect(schema.getIsPropSchemaMatch('string', undefined)).toBe(false)
+  expect(schema.getIsPropSchemaMatch('number', undefined)).toBe(false)
+  expect(schema.getIsPropSchemaMatch('boolean', undefined)).toBe(false)
+  expect(schema.getIsPropSchemaMatch('Buffer', undefined)).toBe(false)
 })
 
-it.todo(`getIsIOUnitSchemaMatch: singular ObjectUnitSchema`)
-it.todo(`getIsIOUnitSchemaMatch: array ObjectUnitSchema`)
-
-it.skip(`getIsIOSchemaMatch: one dimentional primitives ('string', 'Buffer')`, () => {
+it(`getIsIOSchemaMatch: one dimentional primitives ('string', 'Buffer')`, () => {
   /* string string -> any */
 
   expect(
@@ -1365,4 +1343,377 @@ it.skip(`getIsIOSchemaMatch: one dimentional primitives ('string', 'Buffer')`, (
   expect(
     schema.getIsIOSchemaMatch(['string', 'string'], ['string', 'string'])
   ).toBe(true)
+})
+
+it(`getIsObjectUnitSchemaMatch`, () => {
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      }
+    )
+  ).toBe(true)
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['y'], required: true },
+        payload: 'string',
+      }
+    )
+  ).toBe(false)
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'Buffer',
+      }
+    )
+  ).toBe(false)
+
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        anythingExtra: 'string',
+      }
+    )
+  ).toBe(true)
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        anythingExtra: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      }
+    )
+  ).toBe(false)
+
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: 'string',
+      }
+    )
+  ).toBe(true)
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: 'string',
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: 'number',
+      }
+    )
+  ).toBe(false)
+
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'string' },
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'string' },
+      }
+    )
+  ).toBe(true)
+
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'string' },
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'number' },
+      }
+    )
+  ).toBe(false)
+
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'string' },
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      }
+    )
+  ).toBe(true)
+  expect(
+    schema.getIsObjectUnitSchemaMatch(
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+        stringProp: { type: 'string', required: true },
+      },
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      }
+    )
+  ).toBe(false)
+})
+
+it(`getIsIOUnitSchemaMatch: singular 'string' | 'Buffer'`, () => {
+  expect(schema.getIsIOUnitSchemaMatch('string', 'string')).toBe(true)
+
+  expect(schema.getIsIOUnitSchemaMatch('string', 'Buffer')).toBe(false)
+  expect(schema.getIsIOUnitSchemaMatch('string', ['string'])).toBe(false)
+  expect(schema.getIsIOUnitSchemaMatch('string', ['Buffer'])).toBe(false)
+
+  expect(
+    schema.getIsIOUnitSchemaMatch('string', {
+      unitId: { type: 'stringUnion', of: ['x'], required: true },
+      payload: 'string',
+    })
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOUnitSchemaMatch('string', [
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+    ])
+  ).toBe(false)
+
+  expect(schema.getIsIOUnitSchemaMatch('Buffer', 'Buffer')).toBe(true)
+
+  expect(schema.getIsIOUnitSchemaMatch('Buffer', 'string')).toBe(false)
+  expect(schema.getIsIOUnitSchemaMatch('Buffer', ['Buffer'])).toBe(false)
+  expect(schema.getIsIOUnitSchemaMatch('Buffer', ['string'])).toBe(false)
+
+  expect(
+    schema.getIsIOUnitSchemaMatch('Buffer', {
+      unitId: { type: 'stringUnion', of: ['x'], required: true },
+      payload: 'string',
+    })
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOUnitSchemaMatch('Buffer', [
+      {
+        unitId: { type: 'stringUnion', of: ['x'], required: true },
+        payload: 'string',
+      },
+    ])
+  ).toBe(false)
+})
+
+it(`getIsIOUnitSchemaMatch: array 'string' | 'Buffer'`, () => {
+  expect(schema.getIsIOUnitSchemaMatch(['string'], ['string'])).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(['string'], 'string')).toBe(false)
+  expect(
+    schema.getIsIOUnitSchemaMatch(['string'], {
+      unitId: { type: 'stringUnion', of: ['x'], required: true },
+      payload: 'string',
+    })
+  ).toBe(false)
+  expect(
+    schema.getIsIOUnitSchemaMatch(
+      ['string'],
+      [
+        {
+          unitId: { type: 'stringUnion', of: ['x'], required: true },
+          payload: 'string',
+        },
+      ]
+    )
+  ).toBe(false)
+
+  expect(schema.getIsIOUnitSchemaMatch(['Buffer'], ['Buffer'])).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(['Buffer'], 'Buffer')).toBe(false)
+  expect(
+    schema.getIsIOUnitSchemaMatch(['Buffer'], {
+      unitId: { type: 'stringUnion', of: ['x'], required: true },
+      payload: 'Buffer',
+    })
+  ).toBe(false)
+  expect(
+    schema.getIsIOUnitSchemaMatch(
+      ['Buffer'],
+      [
+        {
+          unitId: { type: 'stringUnion', of: ['x'], required: true },
+          payload: 'Buffer',
+        },
+      ]
+    )
+  ).toBe(false)
+})
+
+it(`getIsIOUnitSchemaMatch: singular ObjectUnitSchema`, () => {
+  const x: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['a'], required: true },
+    payload: 'string',
+  }
+
+  const y: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['b'], required: true },
+    payload: 'string',
+  }
+
+  expect(schema.getIsIOUnitSchemaMatch(x, x)).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(x, y)).toBe(false)
+
+  expect(schema.getIsIOUnitSchemaMatch(y, y)).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(y, x)).toBe(false)
+})
+
+it(`getIsIOUnitSchemaMatch: array ObjectUnitSchema`, () => {
+  const x: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['a'], required: true },
+    payload: 'string',
+  }
+
+  const y: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['b'], required: true },
+    payload: 'string',
+  }
+
+  expect(schema.getIsIOUnitSchemaMatch(x, x)).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(x, y)).toBe(false)
+
+  expect(schema.getIsIOUnitSchemaMatch(y, y)).toBe(true)
+  expect(schema.getIsIOUnitSchemaMatch(y, x)).toBe(false)
+})
+
+it(`getIsIOSchemaMatch: one dimentional primitives ('string', 'Buffer')`, () => {
+  /* string string -> any */
+
+  expect(
+    schema.getIsIOSchemaMatch(['string', 'string'], ['string', 'string'])
+  ).toBe(true)
+
+  expect(
+    schema.getIsIOSchemaMatch(['string', 'string'], ['Buffer', 'string'])
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOSchemaMatch(['string', 'string'], ['string', 'Buffer'])
+  ).toBe(false)
+
+  /* Buffer string -> any */
+
+  expect(
+    schema.getIsIOSchemaMatch(['Buffer', 'string'], ['Buffer', 'string'])
+  ).toBe(true)
+
+  expect(
+    schema.getIsIOSchemaMatch(['Buffer', 'string'], ['string', 'string'])
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOSchemaMatch(['Buffer', 'string'], ['string', 'string'])
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOSchemaMatch(['string', 'Buffer'], ['string', 'string'])
+  ).toBe(false)
+
+  expect(
+    schema.getIsIOSchemaMatch(['string', 'string'], ['string', 'string'])
+  ).toBe(true)
+})
+
+it(`getIsIOSchemaMatch: ObjectUnitSchema`, () => {
+  const x: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['a'], required: true },
+    payload: 'string',
+  }
+
+  const y: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['b'], required: true },
+    payload: 'string',
+  }
+
+  expect(schema.getIsIOSchemaMatch([x, x], [x, x])).toBe(true)
+  expect(schema.getIsIOSchemaMatch(['string', x], [x, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, 'string'], [x, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, x], ['string', x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, x], [x, 'string'])).toBe(false)
+
+  expect(schema.getIsIOSchemaMatch([x, y], [x, y])).toBe(true)
+
+  expect(schema.getIsIOSchemaMatch([y, x], [x, y])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([y, y], [x, y])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, x], [x, y])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, y], [y, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, y], [x, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, y], [y, y])).toBe(false)
+})
+
+it(`getIsIOSchemaMatch: ObjectUnitSchema array`, () => {
+  const x: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['a'], required: true },
+    payload: 'string',
+  }
+
+  expect(schema.getIsIOSchemaMatch([[x], x], [[x], x])).toBe(true)
+  expect(schema.getIsIOSchemaMatch([[x], x], [x, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([[x], x], [x, [x]])).toBe(false)
+
+  expect(schema.getIsIOSchemaMatch([x, [x]], [x, [x]])).toBe(true)
+  expect(schema.getIsIOSchemaMatch([x, [x]], [x, x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, [x]], [[x], x])).toBe(false)
+
+  expect(schema.getIsIOSchemaMatch([[x], [x]], [[x], [x]])).toBe(true)
+  expect(schema.getIsIOSchemaMatch([[x], [x]], [x, [x]])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([[x], [x]], [[x], x])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([[x], [x]], [x, x])).toBe(false)
+
+  const y: I.ObjectUnitSchema = {
+    unitId: { type: 'stringUnion', of: ['b'], required: true },
+    payload: 'string',
+  }
+
+  expect(schema.getIsIOSchemaMatch([[x], [y]], [[x], [y]])).toBe(true)
+  expect(schema.getIsIOSchemaMatch([[x], [y]], [x, [y]])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([[x], [y]], [[x], y])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([[x], y], [[x], [y]])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, [y]], [[x], [y]])).toBe(false)
+  expect(schema.getIsIOSchemaMatch([x, y], [[x], [y]])).toBe(false)
 })

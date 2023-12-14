@@ -4,6 +4,13 @@
 type PropSchemaBase<T> = {
   description?: string
   required?: boolean
+
+  /**
+   * If the property schema has a `default` value, the result
+   * property type must be optional at MEDIATOR PUBLIC API.
+   * In the absence of a value, the MEDIATOR will use the default
+   * specified in the property schema.
+   **/
   default?: T
 }
 
@@ -85,10 +92,10 @@ export type OptionalPropSchema = '?Buffer' | '?string' | '?number' | '?boolean'
 export type PropSchema = ObjectPropSchema | RequiredPropSchema
 
 /**
- * Object IO Unit schema: `id`, `payload` + meta information
+ * Object IO Unit schema: `unitId`, `payload` + meta information
  *
  * In the context of connector API the given type will be used
- * as IO literal: `[Transformation][id + suffixes][id + suffixes]`
+ * as IO literal: `[Transformation][unitId + suffixes][unitId + suffixes]`
  * for `chatMessage` value result could be:
  *
  *   - textToText.chatMessageStream.chatMessage
@@ -96,7 +103,7 @@ export type PropSchema = ObjectPropSchema | RequiredPropSchema
  *   - textToText.string.chatMessageArr
  *   - textToText.chatMessageArrStream.buffer
  *
- * We will generate `export type ChatMessageUnit` so `id` should be
+ * We will generate `export type ChatMessageUnit` so `unitId` should be
  * the unique identifier of the specified schema
  *
  * The suffix will be added by the following rules:
@@ -106,9 +113,12 @@ export type PropSchema = ObjectPropSchema | RequiredPropSchema
  *   - `ArrStream`: if API expects `StreamOf<ChatMessageUnit[]>`
  **/
 export type ObjectUnitSchema = {
-  id: string
+  // TODO: not sure if `unitId` property should be required
+  //       we could allow user to omit `unitId` entirely from
+  //       the MEDIATOR PUBLIC API entirely depending on `required` value
+  unitId: StringUnionPropSchema & { required: true; of: [string] }
   payload: 'Buffer' | 'string'
-  [key: string]: PropSchema | string
+  [key: string]: PropSchema
 }
 
 export type PayloadUnitSchema = 'string' | 'Buffer'

@@ -171,7 +171,7 @@ export const unitSchemaToType = (unitSchema: I.UnitSchema): string => {
     return `${key}${optionalSymbol}: ${valueType}`
   })
 
-  const unitId = camelCaseToPascalCase(unitSchema.id + 'Unit')
+  const unitId = camelCaseToPascalCase(unitSchema.unitId.of[0] + 'Unit')
 
   const result = dedent(`
     export type ${unitId} = {
@@ -219,9 +219,9 @@ export const generateIOPrimitive = (
         case 'string':
           return 'string'
       }
-    } else {
-      return unitSchema.id
     }
+
+    return unitSchema.unitId.of[0]
   })()
 
   const key = unitKey + suffix
@@ -523,8 +523,20 @@ export const schemaToAdapterFiles = (
 
 export const getIsPropSchemaMatch = (
   requirement: I.PropSchema,
-  target: I.PropSchema
+  target: I.PropSchema | undefined
 ): boolean => {
+  if (typeof target === 'undefined') {
+    if (typeof requirement !== 'object') {
+      return false
+    }
+
+    if (requirement.required && typeof requirement.default === 'undefined') {
+      return false
+    }
+
+    return true
+  }
+
   if (typeof requirement === 'object') {
     if (typeof target === 'object') {
       if (target.type !== requirement.type) {
@@ -717,44 +729,80 @@ export const getIsObjectUnitSchemaMatch = (
   requirement: I.ObjectUnitSchema,
   target: I.ObjectUnitSchema
 ): boolean => {
-  // FIXME: implement
-  throw Error('Not implemented')
+  for (const requirementKey in requirement) {
+    const requirementValue = requirement[requirementKey]
+    const targetValue = target[requirementKey]
+
+    if (requirementKey === 'payload') {
+      if (requirementValue !== targetValue) {
+        return false
+      }
+    }
+
+    if (typeof requirementValue === 'string') {
+      if (requirementValue !== targetValue) {
+        return false
+      }
+    }
+
+    if (typeof requirementValue === 'object') {
+      if (requirementValue.required) {
+        if (typeof targetValue === 'undefined') {
+          return false
+        }
+      }
+
+      if (getIsPropSchemaMatch(requirementValue, targetValue) === false) {
+        return false
+      }
+    }
+  }
+
+  return true
 }
 
 export const getIsIOUnitSchemaMatch = (
   requirement: I.IOUnitSchema,
   target: I.IOUnitSchema
 ): boolean => {
-  if (typeof requirement === 'object') {
-    if (Array.isArray(requirement)) {
-      if (typeof target !== 'object') {
-        return false
-      }
-
-      if (Array.isArray(target)) {
-        return getIsIOUnitSchemaMatch(requirement[0], target[0])
-      }
-
+  if (typeof requirement !== 'object') {
+    if (typeof target === 'object') {
       return false
     }
 
-    // FIXME: implement
-    throw Error('Not implemented')
+    return requirement === target
   }
 
-  if (typeof target === 'object') {
+  if (Array.isArray(requirement)) {
+    if (typeof target !== 'object') {
+      return false
+    }
+
+    if (Array.isArray(target)) {
+      return getIsIOUnitSchemaMatch(requirement[0], target[0])
+    }
+
     return false
   }
 
-  return requirement === target
+  if (typeof target !== 'object') {
+    return false
+  }
+
+  if (Array.isArray(target)) {
+    return false
+  }
+
+  return getIsObjectUnitSchemaMatch(requirement, target)
 }
 
 export const getIsIOSchemaMatch = (
   requirement: I.IOSchema,
   target: I.IOSchema
 ): boolean => {
-  // FIXME: implement
-  throw Error('Not implemented')
+  const [rA, rB] = requirement
+  const [tA, tB] = target
+  return getIsIOUnitSchemaMatch(rA, tA) && getIsIOUnitSchemaMatch(rB, tB)
 }
 
 export const getIsSchemaMatchRequirement = (
