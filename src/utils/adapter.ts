@@ -107,6 +107,16 @@ const hasAllKeys = (
   return true
 }
 
+// FIXME: when we use the ADAPTER in a hacky way by its source
+//        and the integrity of this source is corrupted
+//        it affects our test suits and cli commands, error
+//        that should be on the ADAPTER side leaks into our
+//        MEDIATOR source. We probably can partially negate
+//        this by invoking `externalAPI` as function only where
+//        it is needed but it will be a bad compromise. Better
+//        either not use the hacky way at all or validate the integrity
+//        of the used adapter right away, at least wrap it by `try/catch` block
+//
 // FIXME: create actual `externalAPI` instead of `AvailableAdapter` list
 export const getExternalAPI = (
   usedAdapters: UsedAdapter[]

@@ -116,6 +116,9 @@ export type ObjectUnitSchema = {
   // TODO: not sure if `unitId` property should be required
   //       we could allow user to omit `unitId` entirely from
   //       the MEDIATOR PUBLIC API entirely depending on `required` value
+  //
+  // TODO: describe why we should use StringUnion here but not some extra
+  //       `LiteralPropSchema` and don't narrow this type with `of: [string]`
   unitId: StringUnionPropSchema & { required: true; of: [string] }
   payload: 'Buffer' | 'string'
   [key: string]: PropSchema

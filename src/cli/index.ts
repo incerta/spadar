@@ -3,11 +3,22 @@ import config from '../config'
 import { SpadarError } from '../utils/error'
 import { collectFlags } from '../utils/command-line'
 import adapterRequirements from '../adapter-requirements'
+import * as schema from '../utils/schema'
 
 import { runChat } from './chat'
 import { runAdapter } from './adapter'
 
 import * as I from '../types'
+
+type APIMatch = {
+  requirementId: string
+  requirementDescription: string
+  adapterName: string
+  connectorId: string
+  transformation: I.Transformation
+  transferMethod: I.TransferMethod
+  ioAccessors: Array<[inputKey: string, outputKey: string]>
+}
 
 /* Set terminal tab title */
 process.stdout.write('\x1b]0;Spadar\x07')
@@ -52,23 +63,9 @@ function cliRouter(argv: string[]) {
         `)
       }
 
-      let log = ''
-
       const [chatFeature] = adapterRequirements
 
-      log += chatFeature.id + '\n\n'
-      log += chatFeature.description + '\n\n'
-
-      const matches: Array<{
-        featureId: string
-        requirementId: string
-        requirementIndex: number
-        adapterName: string
-        connectorId: string
-        transformation: I.Transformation
-        transferMethod: I.TransferMethod
-        isNotImplemented: boolean
-      }> = []
+      const apiMatches: APIMatch[] = []
 
       // TODO: what we want to display?
       //       spadar chat $ADAPTER_MODULE_NAME $CONNECTOR_ID $TRANSFER_METHOD
@@ -82,13 +79,61 @@ function cliRouter(argv: string[]) {
 
           for (const connectorSchema of availableAdapter.adapter.schema) {
             for (const connectorTransformationSchema of connectorSchema.supportedIO) {
-              // TODO: write function
+              const requirementMatches = schema.getRequirementToSchemaMatches(
+                requirement.schema,
+                connectorTransformationSchema
+              )
+
+              requirementMatches?.forEach((requirementMatch) => {
+                apiMatches.push({
+                  requirementId: requirement.id,
+                  requirementDescription: requirement.description,
+                  adapterName: availableAdapter.name,
+                  connectorId: connectorSchema.id,
+                  transformation: requirement.schema.type,
+                  transferMethod: requirementMatch.transferMethod,
+                  ioAccessors: requirementMatch.ioSchemas.map(
+                    ([input, output]) => {
+                      const inputKey = schema.generateIOPrimitive(
+                        requirementMatch.transferMethod,
+                        'input',
+                        input
+                      ).key
+
+                      const outputKey = schema.generateIOPrimitive(
+                        requirementMatch.transferMethod,
+                        'output',
+                        output
+                      ).key
+
+                      return [inputKey, outputKey]
+                    }
+                  ),
+                })
+              })
             }
           }
         }
       }
 
-      console.log(log)
+      if (apiMatches.length === 0) {
+        // TODO: add link to the requirement details and link to our
+        //       default adapter module
+        console.log('No suitable CONNECTORS is found for the CHAT CLI')
+        return
+      }
+
+      console.log(
+        'Based on the used adapters we you might use the following CLI commands:\n\n' +
+          'spadar chat $USED_ADAPTER_NAME $CONNECTOR_ID $TRANSFER_METHOD'
+      )
+
+      apiMatches.forEach((match) => {
+        // TODO: group available CLI API signatures by requirement
+        console.log(
+          `spadar chat ${match.adapterName} ${match.connectorId} ${match.transferMethod}`
+        )
+      })
       return
     }
 

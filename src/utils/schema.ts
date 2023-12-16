@@ -99,6 +99,15 @@ type ConnectorTypingsStructure = Record<
   >
 >
 
+/**
+ * When we validating adapter schemas by our requirements we need
+ * the object that describes how to access specific connector
+ **/
+type RequirementMatch = {
+  transferMethod: I.TransferMethod
+  ioSchemas: I.IOSchema[]
+}
+
 export const STREAM_SUFFIX = 'Stream'
 export const ARRAY_SUFFIX = 'Arr'
 
@@ -805,6 +814,7 @@ export const getIsIOSchemaMatch = (
   return getIsIOUnitSchemaMatch(rA, tA) && getIsIOUnitSchemaMatch(rB, tB)
 }
 
+// FIXME: DEPRECATED and currently unused
 export const getIsSchemaMatchRequirement = (
   requirement: I.TransformationIOSchema,
   target: I.TransformationIOSchema
@@ -843,4 +853,57 @@ export const getIsSchemaMatchRequirement = (
   }
 
   return true
+}
+
+// FIXME: the name of the function is not correct
+//        we are not comparing requirement to schema
+//        we just comparing two transformation schemas
+//
+// TODO: explain in the comment why the position of
+//       `requirement` and `target` matters:
+//       target could have more IO options then requirement?
+//       maybe it is not matter after all when we talking
+//       about the matches and not just boolean validation
+export const getRequirementToSchemaMatches = (
+  requirement: I.TransformationIOSchema,
+  target: I.TransformationIOSchema
+): undefined | RequirementMatch[] => {
+  if (requirement.type !== target.type) {
+    return undefined
+  }
+
+  const matches: RequirementMatch[] = []
+
+  for (const x in requirement.io) {
+    const transferMethod = x as I.TransferMethod
+
+    const requirementTransferMethodIO = requirement.io[
+      transferMethod
+    ] as I.IOSchema[]
+
+    const targetTransferMethodIO = target.io[transferMethod]
+
+    if (typeof targetTransferMethodIO === 'undefined') {
+      continue
+    }
+
+    const match: RequirementMatch = {
+      transferMethod,
+      ioSchemas: [],
+    }
+
+    for (const requirementIOSchema of requirementTransferMethodIO) {
+      targetTransferMethodIO.forEach((targetIOSchema) => {
+        if (getIsIOSchemaMatch(requirementIOSchema, targetIOSchema)) {
+          match.ioSchemas.push(targetIOSchema)
+        }
+      })
+    }
+
+    if (match.ioSchemas.length) {
+      matches.push(match)
+    }
+  }
+
+  return matches.length === 0 ? undefined : matches
 }

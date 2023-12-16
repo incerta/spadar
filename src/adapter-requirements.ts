@@ -2,7 +2,7 @@ import dedent from 'dedent'
 import * as I from './types'
 
 export const chatMessageUnit: I.UnitSchema = {
-  id: 'chatMessage',
+  unitId: { type: 'stringUnion', of: ['chatMessage'], required: true },
   role: {
     type: 'stringUnion',
     of: ['system', 'assistant', 'user'],
