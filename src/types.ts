@@ -171,7 +171,7 @@ export type ModelOptionsSchema = {
   [key: string]: PropSchema
 }
 
-// TODO: Support Array<UnitSchema | [UnitSchema]>
+// TODO: Consider support Array<UnitSchema | [UnitSchema]>
 //       as syntax for functional overloads generation
 //       for each given in/out pare
 
@@ -180,6 +180,9 @@ export type Transformation =
   | 'textToImage'
   | 'textToAudio'
   | 'textToVideo'
+  | 'textToCode'
+  | 'codeToText'
+  | 'codeToCode'
   | 'imageToText'
   | 'imageToImage'
   | 'imageToAudio'
@@ -230,6 +233,8 @@ export type TransferMethod =
  **/
 export type TransformationIOSchema = {
   type: Transformation
+  // TODO: rename `io` to `transferMethod`
+  //       there is too much IO term in the code
   io: { [k in TransferMethod]?: IOSchema[] }
 }
 
@@ -269,6 +274,8 @@ export type ConnectorSchema = {
 
   /**
    * Types of IO following CONNECTOR going to support
+   *
+   * TODO: rename to `transformations`
    **/
   supportedIO: TransformationIOSchema[]
 
@@ -297,8 +304,31 @@ export type StreamOf<T> = {
 export type Adapter = {
   name: string
   version: string
+  // TODO: rename to `connectorSchemas`
   schema: ConnectorSchema[]
-  connectors: { [connectorId: string]: unknown }
+  connectors: {
+    [connectorId: string]:
+      | undefined
+      | {
+          [transformation in Transformation]:
+            | undefined
+            | {
+                [inputAccessor: string]:
+                  | undefined
+                  | {
+                      [outputAccessor: string]:
+                        | undefined
+                        | (((
+                            keys: Record<string, string>,
+                            options: Record<string, unknown>,
+                            unit: unknown | unknown[]
+                          ) => Promise<unknown>) & {
+                            isSpadarSignature?: boolean
+                          })
+                    }
+              }
+        }
+  }
 }
 
 /**

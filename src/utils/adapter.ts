@@ -7,6 +7,10 @@ import * as I from '../types'
 
 const ADAPTER_ENTRY_POINT_PATH = 'src/adapter.ts'
 
+/**
+ * The `UsedAdapter` array is extracted from `used-adapters.json` file
+ * of the `config.resources.usedAdaptersFilePath`
+ **/
 export type UsedAdapter = {
   /**
    * The adapter module name
@@ -34,7 +38,7 @@ export type UsedAdapter = {
   specifiedKeys: Record<string, string>
 }
 
-type AvailableAdapter = UsedAdapter & {
+export type AvailableAdapter = UsedAdapter & {
   /**
    * Is all `requiredKeys` are specified in `specifiedKeys`
    *
@@ -107,7 +111,7 @@ const hasAllKeys = (
   return true
 }
 
-// FIXME: when we use the ADAPTER in a hacky way by its source
+// TODO: when we use the ADAPTER in a hacky way by its source
 //        and the integrity of this source is corrupted
 //        it affects our test suits and cli commands, error
 //        that should be on the ADAPTER side leaks into our
@@ -115,26 +119,28 @@ const hasAllKeys = (
 //        this by invoking `externalAPI` as function only where
 //        it is needed but it will be a bad compromise. Better
 //        either not use the hacky way at all or validate the integrity
-//        of the used adapter right away, at least wrap it by `try/catch` block
-//
-// FIXME: create actual `externalAPI` instead of `AvailableAdapter` list
-export const getExternalAPI = (
+//        of the used adapter right away
+export const getAvailableAdapters = (
   usedAdapters: UsedAdapter[]
 ): AvailableAdapter[] => {
   const availableAdapters: AvailableAdapter[] = []
 
   for (const usedAdapter of usedAdapters) {
-    const adapter = fs.existsSync(usedAdapter.path)
-      ? getAdapterByPath(usedAdapter.path).adapter
-      : undefined
+    try {
+      const adapter = fs.existsSync(usedAdapter.path)
+        ? getAdapterByPath(usedAdapter.path).adapter
+        : undefined
 
-    const availableAdapter: AvailableAdapter = {
-      ...usedAdapter,
-      adapter,
-      ready: hasAllKeys(usedAdapter.requiredKeys, usedAdapter.specifiedKeys),
+      const availableAdapter: AvailableAdapter = {
+        ...usedAdapter,
+        adapter,
+        ready: hasAllKeys(usedAdapter.requiredKeys, usedAdapter.specifiedKeys),
+      }
+
+      availableAdapters.push(availableAdapter)
+    } catch (_) {
+      continue
     }
-
-    availableAdapters.push(availableAdapter)
   }
 
   return availableAdapters

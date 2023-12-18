@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 //        for string transformations and other string related stuff
 //        `string` for example
 import { toKebabCase } from './utils/str'
-import { getUsedAdapters, getExternalAPI } from './utils/adapter'
+import { getUsedAdapters, getAvailableAdapters } from './utils/adapter'
 import { SpadarError } from './utils/error'
 import { resolvePath } from './utils/command-line'
 import { version } from '../package.json'
@@ -36,9 +36,7 @@ const resourcesDirectory = ((): string => {
 })()
 
 const usedAdapters = getUsedAdapters(resourcesDirectory)
-
-// FIXME: create actual `externalAPI` instead of `AvailableAdapter` list
-const externalAPI = getExternalAPI(usedAdapters)
+const availableAdapters = getAvailableAdapters(usedAdapters)
 
 export default {
   /* Spadar module version */
@@ -56,7 +54,7 @@ export default {
   },
 
   /**
-   *
+   * FIXME: write description of the property
    **/
   usedAdapters,
 
@@ -67,7 +65,7 @@ export default {
    * Result API should exclude connector IO functions that not yet specified
    * (connector signature is not mutated by connector API file)
    **/
-  externalAPI,
+  availableAdapters,
 
   /* All paths are relative to the root of ADAPTER module source */
   adapter: {

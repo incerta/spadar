@@ -3,6 +3,7 @@ import dedent from 'dedent'
 import config from '../config'
 import { SpadarError } from '../utils/error'
 import { collectFlags } from '../utils/command-line'
+
 import adapterRequirements from '../adapter-requirements'
 import * as schema from '../utils/schema'
 
@@ -24,7 +25,7 @@ type APIMatch = {
 /* Set terminal tab title */
 process.stdout.write('\x1b]0;Spadar\x07')
 
-function cliRouter(argv: string[]) {
+async function cliRouter(argv: string[]) {
   const params = argv.slice(2)
 
   if (!params[0]) {
@@ -44,6 +45,10 @@ function cliRouter(argv: string[]) {
       //       transformation type in the parenthesis like:
       //       "adapters for text to text transformation (12)"
 
+      // FIXME: on the early stages of development it could be reasonable
+      //        approach to support only `staticToStatic` transfer method
+      //        for TRANSFORMATION CLI capabilities
+
       const helpMessage = dedent(`
         Usage: spadar [flag]
 
@@ -59,15 +64,19 @@ function cliRouter(argv: string[]) {
 
           CLI stdin and stdout for data transformation by external adapter module
 
-          Examples:  echo "Hello!" | spadar textToText spadar-adapter GPT staticToStatic > file.txt
-                     cat image.jpg | spadar imageToImage spadar-adapter DALL-E staticToStatic > file.jpg
+          Examples:  echo "Hello!" | spadar textToText spadar-adapter GPT > file.txt
+                     cat image.jpg | spadar imageToImage spadar-adapter DALL-E > file.jpg
    
         Transformations:
 
           textToText                  adapters for text to text transformation
+          textToCode                  adapters for text to code transformation
           textToImage                 adapters for text to image transformation
           textToAudio                 adapters for text to audio transformation
           textToVideo                 adapters for text to video transformation
+
+          codeToText                  adapters for code to text transformation
+          codeToCode                  adapters for code to code transformation
 
           imageToText                 adapters for image to text transformation
           imageToImage                adapters for image to image transformation
@@ -128,7 +137,7 @@ function cliRouter(argv: string[]) {
       //       available based on the used adapters
 
       for (const requirement of chatFeature.requirements) {
-        for (const availableAdapter of config.externalAPI) {
+        for (const availableAdapter of config.availableAdapters) {
           if (!availableAdapter.adapter) {
             continue
           }

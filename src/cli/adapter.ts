@@ -6,7 +6,7 @@ import { SpadarError } from '../utils/error'
 import { schemaToAdapterFiles } from '../utils/schema'
 import { resolvePath } from '../utils/command-line'
 import { askQuestion } from '../utils/interactive-cli'
-import { getAdapterByPath } from '../utils/adapter'
+import { getAdapterByPath, UsedAdapter } from '../utils/adapter'
 
 import config from '../config'
 import * as I from '../types'
@@ -93,9 +93,7 @@ export const runAdapter = async (flags: {
   if (flags.use) {
     const { adapter, adapterAbsolutePath } = getAdapterByPath(flags.use)
 
-    const usedAdapter = config.userConfig.usedAdapters.find(
-      (x) => x.name === adapter.name
-    )
+    const usedAdapter = config.usedAdapters.find((x) => x.name === adapter.name)
 
     const requiredKeys = adapter.schema.reduce<Record<string, string>>(
       (acc, connectorSchema) => {
@@ -117,17 +115,13 @@ export const runAdapter = async (flags: {
     }
 
     if (usedAdapter) {
-      config.userConfig.usedAdapters = config.userConfig.usedAdapters.filter(
+      config.usedAdapters = config.usedAdapters.filter(
         (x) => x.name !== usedAdapter.name
       )
     }
 
-    config.userConfig.usedAdapters.push(updatedUsedAdapter)
-    const stringifiedUsedAdapters = JSON.stringify(
-      config.userConfig.usedAdapters,
-      null,
-      2
-    )
+    config.usedAdapters.push(updatedUsedAdapter)
+    const stringifiedUsedAdapters = JSON.stringify(config.usedAdapters, null, 2)
 
     fs.writeFileSync(
       config.resources.usedAdaptersFilePath,
@@ -139,7 +133,7 @@ export const runAdapter = async (flags: {
 
     if (flags.silent !== true) {
       console.log(
-        `\nYour adapter ${name}@${version} had been succesfully connected!\n`
+        `\nYour adapter ${name}@${version} had been successfully connected!\n`
       )
 
       const notSpecifiedKeys: Array<{ key: string; description?: string }> = []
