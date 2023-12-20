@@ -9,11 +9,11 @@ export function getClipboardText(): string | null {
     switch (process.platform) {
       case 'darwin':
         return 'pbpaste'
-      // FIXME: did't actually tested on `windows` yet
+      // TODO: did't actually tested on `windows` yet
       case 'win32':
         return 'powershell.exe -command "Get-Clipboard"'
       default:
-        // FIXME: try to find solution that works without `xclip` util
+        // TODO: try to find solution that works without `xclip` util
         return 'xclip -selection clipboard -o' // Linux (requires xclip to be installed)
     }
   })()
@@ -244,3 +244,86 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 
   return result
 }
+
+// FIXME: implement the prototype completely
+export const runCli =
+  (argv: string[]) =>
+  <
+    T extends Record<string, I.PropSchema>,
+    U extends (
+      restArgv: string[],
+      flags: {
+        [k in keyof T]: T[k] extends I.StringPropSchema
+          ? OptionalizeProp<T[k], string>
+          : T[k] extends I.NumberPropSchema
+          ? OptionalizeProp<T[k], number>
+          : T[k] extends I.BooleanPropSchema
+          ? OptionalizeProp<T[k], boolean>
+          : T[k] extends I.BufferPropSchema
+          ? OptionalizeProp<T[k], Buffer>
+          : T[k] extends I.StringUnionPropSchema
+          ? OptionalizeProp<T[k], T[k]['of'][0]>
+          : T[k] extends 'string'
+          ? string
+          : T[k] extends 'number'
+          ? number
+          : T[k] extends 'boolean'
+          ? boolean
+          : T[k] extends 'Buffer'
+          ? Buffer
+          : never
+      }
+    ) => void
+  >(
+    commands: Array<[argvSchema: string[], flagsSchema: T, callback: U]>
+  ) => {
+    for (let i = 0; i < commands.length; i++) {
+      const [argvSchema] = commands[i]
+
+      for (const pathChunk of argvSchema) {
+        if (pathChunk === '') {
+          throw new SpadarError(`
+            Found empty string in "argvSchema":
+            [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+          `)
+        }
+
+        if (/\s/.test(pathChunk)) {
+          throw new SpadarError(`
+            Found whitespace in "argvSchema" strings:
+            [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+          `)
+        }
+      }
+
+      if (i === commands.length - 1) {
+        continue
+      }
+
+      for (let j = i + 1; j < commands.length; j++) {
+        const [compareArgvSchema] = commands[j]
+
+        if (argvSchema.length !== compareArgvSchema.length) {
+          continue
+        }
+
+        if (argvSchema.length === 0) {
+          throw new SpadarError(`
+            Found duplicate in the commands "argvSchema" on the same level.
+            Only one empty array as "argvSchema" is allowed for the list of
+            commands as mean of reaction to the root command like "spadar" or
+            within the root of the recoursive "runCli" call inside a command callback.
+          `)
+        }
+
+        for (let k = 0; k < argvSchema.length; k++) {
+          if (argvSchema[k] === compareArgvSchema[k]) {
+            throw new SpadarError(`
+              Found duplicate in the "argvSchema" of the two commands on the same level:
+              [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+            `)
+          }
+        }
+      }
+    }
+  }
