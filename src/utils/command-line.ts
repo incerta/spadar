@@ -245,53 +245,63 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
   return result
 }
 
-// FIXME: implement the prototype completely
+type FlagsSchmaExpectedType<T> = {
+  [k in keyof T]: T[k] extends I.StringPropSchema
+    ? OptionalizeProp<T[k], string>
+    : T[k] extends I.NumberPropSchema
+    ? OptionalizeProp<T[k], number>
+    : T[k] extends I.BooleanPropSchema
+    ? OptionalizeProp<T[k], boolean>
+    : T[k] extends I.BufferPropSchema
+    ? OptionalizeProp<T[k], Buffer>
+    : T[k] extends I.StringUnionPropSchema
+    ? OptionalizeProp<T[k], T[k]['of'][0]>
+    : T[k] extends 'string'
+    ? string
+    : T[k] extends 'number'
+    ? number
+    : T[k] extends 'boolean'
+    ? boolean
+    : T[k] extends 'Buffer'
+    ? Buffer
+    : never
+}
+
+/**
+ * @param argv - sequence of commands initially passed from `process.argv.slice(2)`,
+ *               for the `runCli` function we want to allow its usage recursively
+ *
+ * @param help - help will be logged in to types of scenarios:
+ *               1) The command has `-h` or `--help` specified flags
+ *               2) No `commandPath` matches are found on the `commands` level
+ **/
 export const runCli =
-  (argv: string[]) =>
+  (argv: string[], help?: string) =>
   <
     T extends Record<string, I.PropSchema>,
-    U extends (
-      restArgv: string[],
-      flags: {
-        [k in keyof T]: T[k] extends I.StringPropSchema
-          ? OptionalizeProp<T[k], string>
-          : T[k] extends I.NumberPropSchema
-          ? OptionalizeProp<T[k], number>
-          : T[k] extends I.BooleanPropSchema
-          ? OptionalizeProp<T[k], boolean>
-          : T[k] extends I.BufferPropSchema
-          ? OptionalizeProp<T[k], Buffer>
-          : T[k] extends I.StringUnionPropSchema
-          ? OptionalizeProp<T[k], T[k]['of'][0]>
-          : T[k] extends 'string'
-          ? string
-          : T[k] extends 'number'
-          ? number
-          : T[k] extends 'boolean'
-          ? boolean
-          : T[k] extends 'Buffer'
-          ? Buffer
-          : never
-      }
-    ) => void
+    U extends (restArgv: string[], flags: FlagsSchmaExpectedType<T>) => void
   >(
-    commands: Array<[argvSchema: string[], flagsSchema: T, callback: U]>
+    commands: Array<[commandPath: string[], flagsSchema: T, callback: U]>
   ) => {
-    for (let i = 0; i < commands.length; i++) {
-      const [argvSchema] = commands[i]
+    /**
+     * Validate `commandPath` compatibility with each other
+     **/
 
-      for (const pathChunk of argvSchema) {
+    for (let i = 0; i < commands.length; i++) {
+      const [commandPath] = commands[i]
+
+      for (const pathChunk of commandPath) {
         if (pathChunk === '') {
           throw new SpadarError(`
-            Found empty string in "argvSchema":
-            [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+            Found empty string in "commandPath":
+            [${commandPath.map((x) => `"${x}"`).join(', ')}]
           `)
         }
 
         if (/\s/.test(pathChunk)) {
           throw new SpadarError(`
-            Found whitespace in "argvSchema" strings:
-            [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+            Found whitespace in "commandPath" strings:
+            [${commandPath.map((x) => `"${x}"`).join(', ')}]
           `)
         }
       }
@@ -300,30 +310,111 @@ export const runCli =
         continue
       }
 
-      for (let j = i + 1; j < commands.length; j++) {
-        const [compareArgvSchema] = commands[j]
+      /* Find `commandPath` duplicates */
 
-        if (argvSchema.length !== compareArgvSchema.length) {
+      for (let j = i + 1; j < commands.length; j++) {
+        const [referenceCommandPath] = commands[j]
+
+        if (commandPath.length !== referenceCommandPath.length) {
           continue
         }
 
-        if (argvSchema.length === 0) {
+        if (commandPath.length === 0) {
           throw new SpadarError(`
-            Found duplicate in the commands "argvSchema" on the same level.
-            Only one empty array as "argvSchema" is allowed for the list of
-            commands as mean of reaction to the root command like "spadar" or
-            within the root of the recoursive "runCli" call inside a command callback.
+            A duplicate "commandPath" was found along the commands array at the same level.
+            Only one empty array in "commandPath" is allowed for the given list of
+            commands as a means of reaction to the root command like "spadar" or
+            within the root of the recursive "runCli" call inside a command "callback".
           `)
         }
 
-        for (let k = 0; k < argvSchema.length; k++) {
-          if (argvSchema[k] === compareArgvSchema[k]) {
+        for (let k = 0; k < commandPath.length; k++) {
+          if (commandPath[k] === referenceCommandPath[k]) {
             throw new SpadarError(`
-              Found duplicate in the "argvSchema" of the two commands on the same level:
-              [${argvSchema.map((x) => `"${x}"`).join(', ')}]
+              Found "CommandPath" duplicate:
+              [${commandPath.map((x) => `"${x}"`).join(', ')}]
             `)
           }
         }
       }
     }
+
+    /**
+     * Call the command callback if `commandPath` matches with `argv`,
+     * collect/validate specified flags by the `flagsSchema`, pass the rest
+     * of `commandPath` to the callback `restArgv` argument which can be
+     * handled by the `runCli` recursive call
+     **/
+
+    const commandMatch = commands.reduce<{
+      matchNCommandPathChunks: number
+      command?: [commandPath: string[], flagsSchema: T, callback: U]
+    }>(
+      (acc, command) => {
+        const [commandPath] = command
+
+        const pathChunkMatchSequenceLength = ((): number | undefined => {
+          if (argv.length > commandPath.length) {
+            return undefined
+          }
+
+          if (argv.length === 0 && commandPath.length === 0) {
+            return 0
+          }
+
+          let result: number | undefined
+
+          for (let i = 0; i < commandPath.length; i++) {
+            if (typeof result === 'undefined' && i > 0) {
+              return result
+            }
+
+            if (typeof result === 'number' && i + 1 > result) {
+              return result
+            }
+
+            if (argv[i] === commandPath[i]) {
+              result = (result || 0) + 1
+            }
+          }
+
+          return result
+        })()
+
+        if (typeof pathChunkMatchSequenceLength !== 'number') {
+          return acc
+        }
+
+        if (pathChunkMatchSequenceLength > acc.matchNCommandPathChunks) {
+          acc.matchNCommandPathChunks = pathChunkMatchSequenceLength
+          acc.command = command
+        }
+
+        return acc
+      },
+      {
+        matchNCommandPathChunks: -Infinity,
+        command: undefined,
+      }
+    )
+
+    const { command } = commandMatch
+
+    if (typeof command === 'undefined') {
+      console.log(
+        help || `The follwoing command is not exists: ${argv.join(' ')}`
+      )
+
+      return
+      // FIXME: use command below instead of `return`
+      // process.exit(1)
+    }
+
+    // TODO: configure eslint to ignore identifiers prefixed with underscore sign
+    const [_, flagsSchema, callback] = command
+
+    const restArgv = argv
+    const collectedFlags = collectFlags(flagsSchema, argv)
+
+    callback(restArgv, collectedFlags)
   }
