@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 
 import config from '../config'
-import { camelCaseToPascalCase, toKebabCase } from './str'
+import { camelCaseToPascalCase, toKebabCase } from './string'
 
 import * as I from '../types'
 

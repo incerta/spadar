@@ -1,7 +1,5 @@
-import os from 'os'
-import { execSync } from 'child_process'
-
 import { SpadarError } from './error'
+
 import * as I from '../types'
 
 type Command<T extends Record<string, I.PropSchema>, U> = [
@@ -9,6 +7,12 @@ type Command<T extends Record<string, I.PropSchema>, U> = [
   flagsSchema: T,
   callback: U
 ]
+
+type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
+  required: true
+}
+  ? U
+  : U | undefined
 
 type ParsedFlags<T extends Record<string, I.PropSchema>> = {
   [k in keyof T]: T[k] extends I.StringPropSchema
@@ -32,34 +36,6 @@ type ParsedFlags<T extends Record<string, I.PropSchema>> = {
     : never
 }
 
-// FIXME: we actually don't need it, if someone wants to
-//        pass the message from clipboard to chat for example
-//        they could use cli pipes, for macos the command
-//        could look like:
-//        ```
-//        pbpaste | spadar chat spadar-openai GPT
-//        ```
-export function getClipboardText(): string | null {
-  const command = ((): string => {
-    switch (process.platform) {
-      case 'darwin':
-        return 'pbpaste'
-      // TODO: did't actually tested on `windows` yet
-      case 'win32':
-        return 'powershell.exe -command "Get-Clipboard"'
-      default:
-        // TODO: try to find solution that works without `xclip` util
-        return 'xclip -selection clipboard -o' // Linux (requires xclip to be installed)
-    }
-  })()
-
-  const output = execSync(command, { encoding: 'utf-8' })
-
-  if (typeof output !== 'string') return null
-
-  return output.trim()
-}
-
 export const getIsRunningInPipe = () => !process.stdin.isTTY
 
 export const getCLIPipeMessege = (): Promise<string> =>
@@ -70,66 +46,7 @@ export const getCLIPipeMessege = (): Promise<string> =>
     process.stdin.on('end', () => resolve(message))
   })
 
-// TODO: consider moving the `resolvePath` function from `command-line.ts`
-//       somewhere else because path resolution is not directly connected
-//       to command line and has much broader scope
-
-/**
- * Resolve the absolute path from the given path.
- * Trailing forward slash (`/`) will be removed
- *
- * @example IO
- *
- * - `/` -> ``
- * - `~` -> `/${userDirectory}`
- * - `.` -> `/${process.cwd()}`
- * - ` ` -> `/${process.cwd()}`
- *
- * TODO: support `..` -> `/${parentDirPath}
- **/
-export const resolvePath = (fileOrDirPath: string): string => {
-  const trimmed = fileOrDirPath.trim()
-
-  if (trimmed[0] === '.' && trimmed[1] == '.') {
-    throw new SpadarError(
-      `Invalid path format: "${trimmed}. We don't support ".." pathes resolution yet"`
-    )
-  }
-
-  if (trimmed.length === 0) return process.cwd()
-
-  const removeTrailingSlash = (x: string) =>
-    x[x.length - 1] === '/' ? x.slice(0, x.length - 1) : x
-
-  if (trimmed[0] === '/') return removeTrailingSlash(trimmed)
-
-  if (trimmed[0] === '~') {
-    if (trimmed[1] !== '/') {
-      throw new SpadarError(`Invalid path format: "${trimmed}"`)
-    }
-
-    return removeTrailingSlash(os.homedir() + trimmed.slice(1))
-  }
-
-  if (trimmed === '.') return process.cwd()
-  if (trimmed[0] === '.') {
-    if (trimmed[1] !== '/') {
-      throw new SpadarError(`Invalid path format: "${trimmed}"`)
-    }
-
-    return removeTrailingSlash(process.cwd() + trimmed.slice(1))
-  }
-
-  return removeTrailingSlash(process.cwd() + '/' + trimmed)
-}
-
-type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
-  required: true
-}
-  ? U
-  : U | undefined
-
-// FIXME: we should assume that if Buffer property type is came from
+// TODO: we should assume that if Buffer property type is came from
 //        the cli flags it must be either file path or URL to the file
 //        so we need a function `reduceToBuffer(urlOrFilePath: string)`
 //        which should be used within `collectFlags` function for the `Buffer` case
@@ -275,7 +192,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
  *   }],
  *
  *   // Third level command
- *   [['textToText', 'spadar-openai', 'GPT', 'string.string'], {}, () => {
+ *   [['textToText', 'spadar-openai', 'GPT.string.string'], {}, () => {
  *      //...
  *   }],
  * ])(process.argv.slice(2))
@@ -283,7 +200,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
  **/
 export const initCli = <
   T extends Record<string, I.PropSchema>,
-  U extends (flags: ParsedFlags<T>) => void
+  U extends (flags: ParsedFlags<T>, pipeInput?: unknown) => void
 >(
   commands: Command<T, U>[]
 ): ((argv: string[]) => void) => {
@@ -298,6 +215,13 @@ export const initCli = <
       if (pathChunk === '') {
         throw new SpadarError(`
           Found empty string in "commandPath":
+          [${commandPath.map((x) => `"${x}"`).join(', ')}]
+        `)
+      }
+
+      if (pathChunk[0] === '-') {
+        throw new SpadarError(`
+          Found flag in "commandPath" strings:
           [${commandPath.map((x) => `"${x}"`).join(', ')}]
         `)
       }
@@ -401,6 +325,22 @@ export const initCli = <
     const flagsSchema = command[1]
     const callback = command[2]
     const collectedFlags = collectFlags(flagsSchema, argv)
+
+    if (process.env['NODE_ENV'] !== 'test' && getIsRunningInPipe()) {
+      getCLIPipeMessege().then((data) => {
+        const parsedData = ((): unknown => {
+          try {
+            return JSON.parse(data)
+          } catch (_) {
+            return data
+          }
+        })()
+
+        callback(collectedFlags, parsedData)
+      })
+
+      return
+    }
 
     callback(collectedFlags)
   }

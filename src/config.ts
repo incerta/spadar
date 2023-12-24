@@ -2,10 +2,10 @@ import dotenv from 'dotenv'
 // FIXME: str? why, just why? figure out better name for
 //        for string transformations and other string related stuff
 //        `string` for example
-import { toKebabCase } from './utils/str'
+import { toKebabCase } from './utils/string'
 import { getUsedAdapters, getAvailableAdapters } from './utils/adapter'
 import { SpadarError } from './utils/error'
-import { resolvePath } from './utils/command-line'
+import { resolvePath } from './utils/path'
 import { version } from '../package.json'
 
 // FIXME: remove `dotenv` dependency when OpenAI api will

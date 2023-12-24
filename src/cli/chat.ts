@@ -1,3 +1,4 @@
+import { execSync } from 'child_process'
 import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
@@ -14,6 +15,33 @@ type Message = {
 const DEFAULT_TEXT_MODEL = 'gpt-4'
 
 const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
+// FIXME: we actually don't need it, if someone wants to
+//        pass the message from clipboard to chat for example
+//        they could use cli pipes, for macos the command
+//        could look like:
+//        ```
+//        pbpaste | spadar chat spadar-openai GPT
+//        ```
+export function getClipboardText(): string | null {
+  const command = ((): string => {
+    switch (process.platform) {
+      case 'darwin':
+        return 'pbpaste'
+      // TODO: did't actually tested on `windows` yet
+      case 'win32':
+        return 'powershell.exe -command "Get-Clipboard"'
+      default:
+        // TODO: try to find solution that works without `xclip` util
+        return 'xclip -selection clipboard -o' // Linux (requires xclip to be installed)
+    }
+  })()
+
+  const output = execSync(command, { encoding: 'utf-8' })
+
+  if (typeof output !== 'string') return null
+
+  return output.trim()
+}
 
 export const displayConverstaionContext = (messages: Message[]) => {
   console.log('\n\nConverstaion context:')
@@ -114,7 +142,7 @@ export const runChat = async (flags: {
   }
 
   if (flags.fromClipboard) {
-    const clipboardText = cmd.getClipboardText()
+    const clipboardText = getClipboardText()
 
     if (clipboardText) {
       const messages: Message[] = [{ role: 'user', content: clipboardText }]

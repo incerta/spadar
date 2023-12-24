@@ -2,8 +2,6 @@ import { initCli } from '../utils/command-line'
 
 it.todo('collectFlags: write test cases for the function')
 
-it.todo('initCli: should throw error if flags are found amongst "commandPath"')
-
 it('initCli: should throw error when empty string is found in "commandPath" arr', () => {
   let isThrown = false
 
@@ -17,6 +15,36 @@ it('initCli: should throw error when empty string is found in "commandPath" arr'
   }
 
   expect(isThrown).toBe(true)
+})
+
+it('initCli: should throw error if flags are found amongst "commandPath"', () => {
+  let isThrown1 = false
+
+  try {
+    initCli([
+      [[], {}, () => undefined],
+      [['check'], {}, () => undefined],
+      [['-withFlag'], {}, () => undefined],
+    ])([])
+  } catch (_) {
+    isThrown1 = true
+  }
+
+  expect(isThrown1).toBe(true)
+
+  let isThrown2 = false
+
+  try {
+    initCli([
+      [[], {}, () => undefined],
+      [['check'], {}, () => undefined],
+      [['-withFlag'], {}, () => undefined],
+    ])([])
+  } catch (_) {
+    isThrown2 = true
+  }
+
+  expect(isThrown2).toBe(true)
 })
 
 it('initCli: should throw error when whitespace is found in "commandPath" arr', () => {
@@ -157,57 +185,55 @@ it('initCli: should call empty "commandPath" callback if "argv" is empty', () =>
   expect(mockFn1).toHaveBeenCalledTimes(0)
 })
 
-describe('initCli: should call correct command callback for the given "argv"', () => {
-  it('commandPath.length === 1', () => {
-    const mockFn0 = jest.fn()
-    const mockFn1 = jest.fn()
-    const mockFn2 = jest.fn()
-    const mockFn3 = jest.fn()
+it('initCli: should call correct command commandPath.length === 1', () => {
+  const mockFn0 = jest.fn()
+  const mockFn1 = jest.fn()
+  const mockFn2 = jest.fn()
+  const mockFn3 = jest.fn()
 
-    initCli([
-      [[], {}, mockFn0],
-      [['case1'], {}, mockFn1],
-      [['case2'], {}, mockFn2],
-      [['case3'], {}, mockFn3],
-    ])(['case2'])
+  initCli([
+    [[], {}, mockFn0],
+    [['case1'], {}, mockFn1],
+    [['case2'], {}, mockFn2],
+    [['case3'], {}, mockFn3],
+  ])(['case2'])
 
-    expect(mockFn0).toHaveBeenCalledTimes(0)
-    expect(mockFn1).toHaveBeenCalledTimes(0)
-    expect(mockFn2).toHaveBeenCalledTimes(1)
-    expect(mockFn3).toHaveBeenCalledTimes(0)
-  })
+  expect(mockFn0).toHaveBeenCalledTimes(0)
+  expect(mockFn1).toHaveBeenCalledTimes(0)
+  expect(mockFn2).toHaveBeenCalledTimes(1)
+  expect(mockFn3).toHaveBeenCalledTimes(0)
+})
 
-  it('commandPath.length === 2', () => {
-    const mockFn1 = jest.fn()
-    const mockFn2 = jest.fn()
-    const mockFn3 = jest.fn()
+it('initCli: should call correct command commandPath.length === 2', () => {
+  const mockFn1 = jest.fn()
+  const mockFn2 = jest.fn()
+  const mockFn3 = jest.fn()
 
-    initCli([
-      [['case1', 'subCase1'], {}, mockFn1],
-      [['case2', 'subCase2'], {}, mockFn2],
-      [['case3', 'subCase3'], {}, mockFn3],
-    ])(['case2', 'subCase2'])
+  initCli([
+    [['case1', 'subCase1'], {}, mockFn1],
+    [['case2', 'subCase2'], {}, mockFn2],
+    [['case3', 'subCase3'], {}, mockFn3],
+  ])(['case2', 'subCase2'])
 
-    expect(mockFn1).toHaveBeenCalledTimes(0)
-    expect(mockFn2).toHaveBeenCalledTimes(1)
-    expect(mockFn3).toHaveBeenCalledTimes(0)
-  })
+  expect(mockFn1).toHaveBeenCalledTimes(0)
+  expect(mockFn2).toHaveBeenCalledTimes(1)
+  expect(mockFn3).toHaveBeenCalledTimes(0)
+})
 
-  it('commandPath.length === 3', () => {
-    const mockFn1 = jest.fn()
-    const mockFn2 = jest.fn()
-    const mockFn3 = jest.fn()
+it('initCli: should call correct command commandPath.length === 3', () => {
+  const mockFn1 = jest.fn()
+  const mockFn2 = jest.fn()
+  const mockFn3 = jest.fn()
 
-    initCli([
-      [['case', 'subCase', 'subSubCase'], {}, mockFn1],
-      [['case', 'subCase', 'subSubCase2'], {}, mockFn2],
-      [['case', 'subCase', 'uniqueCase'], {}, mockFn3],
-    ])(['case', 'subCase', 'uniqueCase'])
+  initCli([
+    [['case', 'subCase', 'subSubCase'], {}, mockFn1],
+    [['case', 'subCase', 'subSubCase2'], {}, mockFn2],
+    [['case', 'subCase', 'uniqueCase'], {}, mockFn3],
+  ])(['case', 'subCase', 'uniqueCase'])
 
-    expect(mockFn1).toHaveBeenCalledTimes(0)
-    expect(mockFn2).toHaveBeenCalledTimes(0)
-    expect(mockFn3).toHaveBeenCalledTimes(1)
-  })
+  expect(mockFn1).toHaveBeenCalledTimes(0)
+  expect(mockFn2).toHaveBeenCalledTimes(0)
+  expect(mockFn3).toHaveBeenCalledTimes(1)
 })
 
 it.todo('initCli: should parse flags properly')
