@@ -256,13 +256,10 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 }
 
 /**
- * @param argv - sequence of commands initially passed from `process.argv.slice(2)`,
- *               for the `runCli` function we want to allow its usage recursively
- *
  * @example
  *
  * ```typescript
- * runCli(process.argv.slice(2),[
+ * initCli([
  *   // ROOT command
  *   [[], { h: { type: 'boolean' }, help: { type: 'boolean'} }, ({ h, help }) => {
  *     if (h || help) {
@@ -270,108 +267,111 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
  *     }
  *   }],
  *
+ *   // First level command
  *   [
  *     ['textToText'],
  *     { h: { type: 'boolean' }, help: { type: 'boolean'} },
  *     ({ h, help }) => {}
  *   }],
  *
+ *   // Third level command
  *   [['textToText', 'spadar-openai', 'GPT', 'string.string'], {}, () => {
  *      //...
  *   }],
- * ])
+ * ])(process.argv.slice(2))
  * ```
- *
- * FIXME: we should rename this function to `initCli` return (argv) => void instead
  **/
-export const runCli =
-  (argv: string[]) =>
-  <
-    T extends Record<string, I.PropSchema>,
-    U extends (flags: ParsedFlags<T>) => void
-  >(
-    commands: Command<T, U>[]
-  ) => {
-    /**
-     * Validate `commandPath` compatibility with each other
-     **/
+export const initCli = <
+  T extends Record<string, I.PropSchema>,
+  U extends (flags: ParsedFlags<T>) => void
+>(
+  commands: Command<T, U>[]
+): ((argv: string[]) => void) => {
+  /**
+   * Validate `commandPath` compatibility with each other
+   **/
 
-    for (let i = 0; i < commands.length; i++) {
-      const [commandPath] = commands[i]
+  for (let i = 0; i < commands.length; i++) {
+    const [commandPath] = commands[i]
 
-      for (const pathChunk of commandPath) {
-        if (pathChunk === '') {
-          throw new SpadarError(`
-            Found empty string in "commandPath":
-            [${commandPath.map((x) => `"${x}"`).join(', ')}]
-          `)
-        }
-
-        if (/\s/.test(pathChunk)) {
-          throw new SpadarError(`
-            Found whitespace in "commandPath" strings:
-            [${commandPath.map((x) => `"${x}"`).join(', ')}]
-          `)
-        }
+    for (const pathChunk of commandPath) {
+      if (pathChunk === '') {
+        throw new SpadarError(`
+          Found empty string in "commandPath":
+          [${commandPath.map((x) => `"${x}"`).join(', ')}]
+        `)
       }
 
-      if (i === commands.length - 1) {
+      if (/\s/.test(pathChunk)) {
+        throw new SpadarError(`
+          Found whitespace in "commandPath" strings:
+          [${commandPath.map((x) => `"${x}"`).join(', ')}]
+        `)
+      }
+    }
+
+    if (i === commands.length - 1) {
+      continue
+    }
+
+    /* Find `commandPath` duplicates */
+
+    for (let j = i + 1; j < commands.length; j++) {
+      const [referenceCommandPath] = commands[j]
+
+      if (commandPath.length !== referenceCommandPath.length) {
         continue
       }
 
-      /* Find `commandPath` duplicates */
+      if (commandPath.length === 0) {
+        throw new SpadarError(`
+          A duplicate "commandPath" was found along the commands array at the same level.
+          Only one empty array in "commandPath" is allowed for the given list of
+          commands as a means of reaction to the root command like "spadar" or
+          within the root of the recursive "initCli" call inside a command "callback".
+        `)
+      }
 
-      for (let j = i + 1; j < commands.length; j++) {
-        const [referenceCommandPath] = commands[j]
-
+      const isPathesEquall = (() => {
         if (commandPath.length !== referenceCommandPath.length) {
-          continue
+          return false
         }
 
-        if (commandPath.length === 0) {
-          throw new SpadarError(`
-            A duplicate "commandPath" was found along the commands array at the same level.
-            Only one empty array in "commandPath" is allowed for the given list of
-            commands as a means of reaction to the root command like "spadar" or
-            within the root of the recursive "runCli" call inside a command "callback".
-          `)
-        }
-
-        const isPathesEquall = (() => {
-          if (commandPath.length !== referenceCommandPath.length) {
+        for (let k = 0; k < commandPath.length; k++) {
+          if (commandPath[k] !== referenceCommandPath[k]) {
             return false
           }
+        }
 
-          for (let k = 0; k < commandPath.length; k++) {
-            if (commandPath[k] !== referenceCommandPath[k]) {
-              return false
-            }
-          }
+        return true
+      })()
 
-          return true
-        })()
-
-        if (isPathesEquall) {
-          throw new SpadarError(`
+      if (isPathesEquall) {
+        throw new SpadarError(`
             Found "CommandPath" duplicate:
             [${commandPath.map((x) => `"${x}"`).join(', ')}]
             [${referenceCommandPath.map((x) => `"${x}"`).join(', ')}]
           `)
-        }
       }
     }
+  }
 
-    const getPathLiteral = (pathChunks: string[]) => pathChunks.join('')
+  const getPathLiteral = (pathChunks: string[]) => pathChunks.join('')
 
-    const commandByPathLiteral = commands.reduce<Map<string, Command<T, U>>>(
-      (acc, command) => {
-        const [commandPath] = command
-        acc.set(getPathLiteral(commandPath), command)
-        return acc
-      },
-      new Map()
-    )
+  const commandByPathLiteral = commands.reduce<Map<string, Command<T, U>>>(
+    (acc, command) => {
+      const [commandPath] = command
+      acc.set(getPathLiteral(commandPath), command)
+      return acc
+    },
+    new Map()
+  )
 
+  /**
+   * @param argv - sequence of commands initially passed from `process.argv.slice(2)`,
+   *               for the `initCli` function we want to allow its usage recursively
+   **/
+  return (argv: string[]) => {
     const command = ((): Command<T, U> | undefined => {
       const argvCommandPathLiteral = (() => {
         const pathChunks: string[] = []
@@ -398,9 +398,10 @@ export const runCli =
       throw new SpadarError(errorMessage)
     }
 
-    // TODO: configure eslint to ignore identifiers prefixed with underscore sign
-    const [_, flagsSchema, callback] = command
+    const flagsSchema = command[1]
+    const callback = command[2]
     const collectedFlags = collectFlags(flagsSchema, argv)
 
     callback(collectedFlags)
   }
+}
