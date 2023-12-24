@@ -1,5 +1,8 @@
-import dedent from 'dedent'
 import { runCli } from '../utils/command-line'
+
+it.todo('collectFlags: write test cases for the function')
+
+it.todo('runCli: should throw error if flags are found amongst "commandPath"')
 
 it('runCli: should throw error when empty string is found in "commandPath" arr', () => {
   let isThrown = false
@@ -129,6 +132,18 @@ it('runCli: should throw error if found "commandPath" duplicates', () => {
   expect(isThrownCase4).toBe(true)
 })
 
+it('runCli: should throw if there is no command match for the given "argv"', () => {
+  let isThrown = false
+
+  try {
+    runCli(['check'])([[['not-check'], {}, () => undefined]])
+  } catch (_) {
+    isThrown = true
+  }
+
+  expect(isThrown).toBe(true)
+})
+
 it('runCli: should call empty "commandPath" callback if "argv" is empty', () => {
   const mockFn0 = jest.fn()
   const mockFn1 = jest.fn()
@@ -178,45 +193,21 @@ describe('runCli: should call correct command callback for the given "argv"', ()
     expect(mockFn3).toHaveBeenCalledTimes(0)
   })
 
-  it('Not perfect match intersect the perfect match depends on the order', () => {
-    // FIXME: This case is too counterintuitive.
-    //        One might expect that a perfect match
-    //        of the `mockFn3` would be more appropriate.
-    //        We should either throw an exception for it
-    //        and force the user to build a hierarchy of the commands
-    //        or just use the perfect match instead of the partial one.
-
+  it('commandPath.length === 3', () => {
     const mockFn1 = jest.fn()
     const mockFn2 = jest.fn()
-
-    runCli(['case', 'subCase'])([
-      [['case', 'subCase', 'subSubCase'], {}, mockFn1],
-      [['case', 'subCase'], {}, mockFn2],
-    ])
-
-    expect(mockFn1).toHaveBeenCalledTimes(1)
-    expect(mockFn2).toHaveBeenCalledTimes(0)
-
     const mockFn3 = jest.fn()
-    const mockFn4 = jest.fn()
 
-    runCli(['case', 'subCase'])([
-      [['case', 'subCase', 'subSubCase'], {}, mockFn3],
-      [['case', 'subCase'], {}, mockFn4],
+    runCli(['case', 'subCase', 'uniqueCase'])([
+      [['case', 'subCase', 'subSubCase'], {}, mockFn1],
+      [['case', 'subCase', 'subSubCase2'], {}, mockFn2],
+      [['case', 'subCase', 'uniqueCase'], {}, mockFn3],
     ])
 
+    expect(mockFn1).toHaveBeenCalledTimes(0)
+    expect(mockFn2).toHaveBeenCalledTimes(0)
     expect(mockFn3).toHaveBeenCalledTimes(1)
-    expect(mockFn4).toHaveBeenCalledTimes(0)
   })
 })
 
-it.todo(
-  'runCli: should slice "argv" before passing to the command callback "restArgv"'
-)
-it.todo(
-  'runCli: should show --help if specified command is not exists and exist with code 1'
-)
-it.todo(dedent`
-  runCli: in case we have two or more commands that have a partial match,
-          the "runCli" function should proceed with the first one
-`)
+it.todo('runCli: should parse flags properly')

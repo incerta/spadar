@@ -4,6 +4,41 @@ import { execSync } from 'child_process'
 import { SpadarError } from './error'
 import * as I from '../types'
 
+type Command<T extends Record<string, I.PropSchema>, U> = [
+  commandPath: string[],
+  flagsSchema: T,
+  callback: U
+]
+
+type ParsedFlags<T extends Record<string, I.PropSchema>> = {
+  [k in keyof T]: T[k] extends I.StringPropSchema
+    ? OptionalizeProp<T[k], string>
+    : T[k] extends I.NumberPropSchema
+    ? OptionalizeProp<T[k], number>
+    : T[k] extends I.BooleanPropSchema
+    ? OptionalizeProp<T[k], boolean>
+    : T[k] extends I.BufferPropSchema
+    ? OptionalizeProp<T[k], Buffer>
+    : T[k] extends I.StringUnionPropSchema
+    ? OptionalizeProp<T[k], T[k]['of'][0]>
+    : T[k] extends 'string'
+    ? string
+    : T[k] extends 'number'
+    ? number
+    : T[k] extends 'boolean'
+    ? boolean
+    : T[k] extends 'Buffer'
+    ? Buffer
+    : never
+}
+
+// FIXME: we actually don't need it, if someone wants to
+//        pass the message from clipboard to chat for example
+//        they could use cli pipes, for macos the command
+//        could look like:
+//        ```
+//        pbpaste | spadar chat spadar-openai GPT
+//        ```
 export function getClipboardText(): string | null {
   const command = ((): string => {
     switch (process.platform) {
@@ -94,11 +129,6 @@ type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
   ? U
   : U | undefined
 
-// TODO: support shorthand aliases for the flags, for example flag `--help`
-//       expected to have `-h` alias
-
-// TODO: add unit tests for the `collectFlags` function
-
 // FIXME: we should assume that if Buffer property type is came from
 //        the cli flags it must be either file path or URL to the file
 //        so we need a function `reduceToBuffer(urlOrFilePath: string)`
@@ -106,27 +136,7 @@ type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
 export const collectFlags = <T extends Record<string, I.PropSchema>>(
   schema: T,
   argv: string[]
-): {
-  [k in keyof T]: T[k] extends I.StringPropSchema
-    ? OptionalizeProp<T[k], string>
-    : T[k] extends I.NumberPropSchema
-    ? OptionalizeProp<T[k], number>
-    : T[k] extends I.BooleanPropSchema
-    ? OptionalizeProp<T[k], boolean>
-    : T[k] extends I.BufferPropSchema
-    ? OptionalizeProp<T[k], Buffer>
-    : T[k] extends I.StringUnionPropSchema
-    ? OptionalizeProp<T[k], T[k]['of'][0]>
-    : T[k] extends 'string'
-    ? string
-    : T[k] extends 'number'
-    ? number
-    : T[k] extends 'boolean'
-    ? boolean
-    : T[k] extends 'Buffer'
-    ? Buffer
-    : never
-} => {
+): ParsedFlags<T> => {
   // eslint-disable-next-line
   const result: any = {}
 
@@ -245,43 +255,42 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
   return result
 }
 
-type FlagsSchmaExpectedType<T> = {
-  [k in keyof T]: T[k] extends I.StringPropSchema
-    ? OptionalizeProp<T[k], string>
-    : T[k] extends I.NumberPropSchema
-    ? OptionalizeProp<T[k], number>
-    : T[k] extends I.BooleanPropSchema
-    ? OptionalizeProp<T[k], boolean>
-    : T[k] extends I.BufferPropSchema
-    ? OptionalizeProp<T[k], Buffer>
-    : T[k] extends I.StringUnionPropSchema
-    ? OptionalizeProp<T[k], T[k]['of'][0]>
-    : T[k] extends 'string'
-    ? string
-    : T[k] extends 'number'
-    ? number
-    : T[k] extends 'boolean'
-    ? boolean
-    : T[k] extends 'Buffer'
-    ? Buffer
-    : never
-}
-
 /**
  * @param argv - sequence of commands initially passed from `process.argv.slice(2)`,
  *               for the `runCli` function we want to allow its usage recursively
  *
- * @param help - help will be logged in to types of scenarios:
- *               1) The command has `-h` or `--help` specified flags
- *               2) No `commandPath` matches are found on the `commands` level
+ * @example
+ *
+ * ```typescript
+ * runCli(process.argv.slice(2),[
+ *   // ROOT command
+ *   [[], { h: { type: 'boolean' }, help: { type: 'boolean'} }, ({ h, help }) => {
+ *     if (h || help) {
+ *       console.log('Nobody will help you and you will die alone')
+ *     }
+ *   }],
+ *
+ *   [
+ *     ['textToText'],
+ *     { h: { type: 'boolean' }, help: { type: 'boolean'} },
+ *     ({ h, help }) => {}
+ *   }],
+ *
+ *   [['textToText', 'spadar-openai', 'GPT', 'string.string'], {}, () => {
+ *      //...
+ *   }],
+ * ])
+ * ```
+ *
+ * FIXME: we should rename this function to `initCli` return (argv) => void instead
  **/
 export const runCli =
-  (argv: string[], help?: string) =>
+  (argv: string[]) =>
   <
     T extends Record<string, I.PropSchema>,
-    U extends (restArgv: string[], flags: FlagsSchmaExpectedType<T>) => void
+    U extends (flags: ParsedFlags<T>) => void
   >(
-    commands: Array<[commandPath: string[], flagsSchema: T, callback: U]>
+    commands: Command<T, U>[]
   ) => {
     /**
      * Validate `commandPath` compatibility with each other
@@ -328,93 +337,70 @@ export const runCli =
           `)
         }
 
-        for (let k = 0; k < commandPath.length; k++) {
-          if (commandPath[k] === referenceCommandPath[k]) {
-            throw new SpadarError(`
-              Found "CommandPath" duplicate:
-              [${commandPath.map((x) => `"${x}"`).join(', ')}]
-            `)
+        const isPathesEquall = (() => {
+          if (commandPath.length !== referenceCommandPath.length) {
+            return false
           }
+
+          for (let k = 0; k < commandPath.length; k++) {
+            if (commandPath[k] !== referenceCommandPath[k]) {
+              return false
+            }
+          }
+
+          return true
+        })()
+
+        if (isPathesEquall) {
+          throw new SpadarError(`
+            Found "CommandPath" duplicate:
+            [${commandPath.map((x) => `"${x}"`).join(', ')}]
+            [${referenceCommandPath.map((x) => `"${x}"`).join(', ')}]
+          `)
         }
       }
     }
 
-    /**
-     * Call the command callback if `commandPath` matches with `argv`,
-     * collect/validate specified flags by the `flagsSchema`, pass the rest
-     * of `commandPath` to the callback `restArgv` argument which can be
-     * handled by the `runCli` recursive call
-     **/
+    const getPathLiteral = (pathChunks: string[]) => pathChunks.join('')
 
-    const commandMatch = commands.reduce<{
-      matchNCommandPathChunks: number
-      command?: [commandPath: string[], flagsSchema: T, callback: U]
-    }>(
+    const commandByPathLiteral = commands.reduce<Map<string, Command<T, U>>>(
       (acc, command) => {
         const [commandPath] = command
-
-        const pathChunkMatchSequenceLength = ((): number | undefined => {
-          if (argv.length > commandPath.length) {
-            return undefined
-          }
-
-          if (argv.length === 0 && commandPath.length === 0) {
-            return 0
-          }
-
-          let result: number | undefined
-
-          for (let i = 0; i < commandPath.length; i++) {
-            if (typeof result === 'undefined' && i > 0) {
-              return result
-            }
-
-            if (typeof result === 'number' && i + 1 > result) {
-              return result
-            }
-
-            if (argv[i] === commandPath[i]) {
-              result = (result || 0) + 1
-            }
-          }
-
-          return result
-        })()
-
-        if (typeof pathChunkMatchSequenceLength !== 'number') {
-          return acc
-        }
-
-        if (pathChunkMatchSequenceLength > acc.matchNCommandPathChunks) {
-          acc.matchNCommandPathChunks = pathChunkMatchSequenceLength
-          acc.command = command
-        }
-
+        acc.set(getPathLiteral(commandPath), command)
         return acc
       },
-      {
-        matchNCommandPathChunks: -Infinity,
-        command: undefined,
-      }
+      new Map()
     )
 
-    const { command } = commandMatch
+    const command = ((): Command<T, U> | undefined => {
+      const argvCommandPathLiteral = (() => {
+        const pathChunks: string[] = []
+
+        for (const pathOrFlagChunk of argv) {
+          if (pathOrFlagChunk[0] === '-') {
+            return getPathLiteral(pathChunks)
+          }
+
+          pathChunks.push(pathOrFlagChunk)
+        }
+
+        return getPathLiteral(pathChunks)
+      })()
+
+      return commandByPathLiteral.get(argvCommandPathLiteral)
+    })()
 
     if (typeof command === 'undefined') {
-      console.log(
-        help || `The follwoing command is not exists: ${argv.join(' ')}`
-      )
+      const errorMessage = argv.length
+        ? `The follwoing command is not exists: ${argv.join(' ')}`
+        : 'No commands is provided'
 
-      return
-      // FIXME: use command below instead of `return`
-      // process.exit(1)
+      throw new SpadarError(errorMessage)
     }
 
     // TODO: configure eslint to ignore identifiers prefixed with underscore sign
     const [_, flagsSchema, callback] = command
-
-    const restArgv = argv
     const collectedFlags = collectFlags(flagsSchema, argv)
 
-    callback(restArgv, collectedFlags)
+    callback(collectedFlags)
   }
