@@ -1,4 +1,6 @@
+import fs from 'fs'
 import { SpadarError } from './error'
+import { resolvePath } from './path'
 
 import * as I from '../types'
 
@@ -46,10 +48,16 @@ export const getCLIPipeMessege = (): Promise<string> =>
     process.stdin.on('end', () => resolve(message))
   })
 
-// TODO: we should assume that if Buffer property type is came from
-//        the cli flags it must be either file path or URL to the file
-//        so we need a function `reduceToBuffer(urlOrFilePath: string)`
-//        which should be used within `collectFlags` function for the `Buffer` case
+const reduceToBuffer = (filePath: string): Buffer => {
+  const absolutePath = resolvePath(filePath)
+
+  if (fs.existsSync(absolutePath) === false) {
+    throw new SpadarError(`Could't find Buffer source: ${filePath}`)
+  }
+
+  return fs.readFileSync(absolutePath)
+}
+
 export const collectFlags = <T extends Record<string, I.PropSchema>>(
   schema: T,
   argv: string[]
@@ -60,30 +68,29 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
   for (const key in schema) {
     const propSchema = schema[key]
     const flagIndex = argv.findIndex((x) => x === `--${key}`)
+    const value = argv[flagIndex + 1]
 
     if (flagIndex === -1) {
-      if (typeof propSchema === 'object' && propSchema.required) {
-        if (!propSchema.default) {
+      if (typeof propSchema === 'object') {
+        if (propSchema.required && !propSchema.default) {
           throw new SpadarError(`The required flag is not specified: --${key}`)
         }
 
         result[key] = propSchema.default
         continue
       }
+
+      if (propSchema === 'boolean') {
+        result[key] = false
+        continue
+      }
+
       continue
     }
 
-    const flagValue = ((): string | number | boolean => {
-      const value = argv[flagIndex + 1]
-
+    const flagValue = ((): string | number | boolean | Buffer => {
       if (typeof propSchema === 'object') {
         switch (propSchema.type) {
-          case 'Buffer': {
-            throw new SpadarError(
-              `We are not supporting binary data passed as cli flag parameter value`
-            )
-          }
-
           case 'string': {
             if (typeof value !== 'string') {
               if (typeof propSchema.default !== 'string') {
@@ -111,7 +118,39 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
           }
 
           case 'boolean': {
+            if (typeof value === 'undefined') {
+              return true
+            }
+
+            if (typeof value === 'string') {
+              try {
+                const parsed = JSON.parse(value)
+
+                if (typeof parsed === 'boolean') {
+                  return parsed
+                }
+              } catch (_) {
+                // TODO: forbide to name key props with literal { "true": '...' } or
+                //       { "false": '...' } on the ADAPTER SCHEMA level
+                return true
+              }
+            }
+
             return true
+          }
+
+          case 'Buffer': {
+            if (typeof value !== 'string') {
+              if (!propSchema.default) {
+                throw new SpadarError(
+                  `The --${key} value should be path to a file`
+                )
+              }
+
+              return propSchema.default
+            }
+
+            return reduceToBuffer(value)
           }
 
           case 'stringUnion': {
@@ -133,12 +172,6 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 
       if (typeof propSchema === 'string') {
         switch (propSchema) {
-          case 'Buffer': {
-            throw new SpadarError(
-              `We are not supporting binary data passed as cli flag parameter value`
-            )
-          }
-
           case 'string': {
             if (typeof value !== 'string') {
               throw new SpadarError(`The --${key} value should be a string`)
@@ -158,7 +191,35 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
           }
 
           case 'boolean': {
+            if (typeof value === 'undefined') {
+              return true
+            }
+
+            if (typeof value === 'string') {
+              try {
+                const parsed = JSON.parse(value)
+
+                if (typeof parsed === 'boolean') {
+                  return parsed
+                }
+              } catch (_) {
+                // TODO: forbide to name key props with literal { "true": '...' } or
+                //       { "false": '...' } on the ADAPTER SCHEMA level
+                return true
+              }
+            }
+
             return true
+          }
+
+          case 'Buffer': {
+            if (typeof value !== 'string') {
+              throw new SpadarError(
+                `The --${key} value should be path to a file`
+              )
+            }
+
+            return reduceToBuffer(value)
           }
         }
       }

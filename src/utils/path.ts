@@ -14,12 +14,12 @@ import { SpadarError } from './error'
  *
  * TODO: support `..` -> `/${parentDirPath}
  **/
-export const resolvePath = (fileOrDirPath: string): string => {
-  const trimmed = fileOrDirPath.trim()
+export const resolvePath = (path: string): string => {
+  const trimmed = path.trim()
 
   if (trimmed[0] === '.' && trimmed[1] == '.') {
     throw new SpadarError(
-      `Invalid path format: "${trimmed}. We don't support ".." pathes resolution yet"`
+      `Invalid path format: "${trimmed}. We don't support ".." path resolution yet"`
     )
   }
 
