@@ -169,7 +169,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
                   return parsed
                 }
               } catch (_) {
-                // TODO: forbide to name key props with literal { "true": '...' } or
+                // TODO: forbid to name key props with literal { "true": '...' } or
                 //       { "false": '...' } on the ADAPTER SCHEMA level
                 return true
               }
@@ -245,20 +245,18 @@ export const cmd = <T extends Record<string, I.PropSchema>>(
  *     )
  *   ],
  *
- *   // First level command
- *   [
- *     ['textToText'],
- *     cmd(
- *       { h: { type: 'boolean' }, help: { type: 'boolean'} },
- *       ({ h, help }) => {}
- *     )
- *   ],
- *
  *   // Third level command
  *   [
  *    ['textToText', 'spadar-openai', 'GPT.string.string'],
- *    cmd({}, () => { //... })
+ *    cmd({}, () => {})
  *   ],
+ *
+ *   // Without using cmd
+ *   [
+ *     ['customCmd'],
+ *     (argv: string[]) => {}
+ *   ],
+ *
  * ])(process.argv.slice(2))
  * ```
  **/

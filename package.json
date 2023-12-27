@@ -30,8 +30,6 @@
   "dependencies": {
     "@clack/prompts": "^0.6.3",
     "dedent": "^1.5.1",
-    "dotenv": "^16.0.3",
-    "kolorist": "^1.8.0",
-    "openai": "^4.8.0"
+    "kolorist": "^1.8.0"
   }
 }

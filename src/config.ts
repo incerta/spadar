@@ -1,21 +1,8 @@
-import dotenv from 'dotenv'
-// FIXME: str? why, just why? figure out better name for
-//        for string transformations and other string related stuff
-//        `string` for example
+import { version } from '../package.json'
 import { toKebabCase } from './utils/string'
 import { getUsedAdapters, getAvailableAdapters } from './utils/adapter'
 import { SpadarError } from './utils/error'
 import { resolvePath } from './utils/path'
-import { version } from '../package.json'
-
-// FIXME: remove `dotenv` dependency when OpenAI api will
-//        be abstracted to external adapter
-dotenv.config()
-
-// TODO: if spadar is installed as local module
-//       the resources directory should be identified
-//       from the `spadar.rc.js` file default export
-//       object `resourcesDirectory` property value
 
 const resourcesDirectory = ((): string => {
   const { SPADAR_RESOURCES_DIR } = process.env
@@ -109,7 +96,4 @@ export default {
      **/
     adapterEntryPoint: `src/adapter.ts`,
   } as const,
-
-  // TODO: should be removed from the config
-  openAI: { apiKey: process.env.OPEN_AI_API_KEY },
 }
