@@ -4,7 +4,7 @@ import path from 'path'
 
 import { SpadarError } from '../utils/error'
 import { schemaToAdapterFiles } from '../utils/schema'
-import { resolvePath } from '../utils/command-line'
+import { resolvePath } from '../utils/path'
 import { askQuestion } from '../utils/interactive-cli'
 import { getAdapterByPath, UsedAdapter } from '../utils/adapter'
 
@@ -190,5 +190,8 @@ export const runAdapter = async (flags: {
 
     // TODO: log if connected adapter could be used in spadar cli chat
     //       based on the provided schema
+    //
+
+    throw new SpadarError('Not implemented')
   }
 }

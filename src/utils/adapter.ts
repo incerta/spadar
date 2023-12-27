@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import { SpadarError } from './error'
-import { resolvePath } from './command-line'
+import { resolvePath } from './path'
 
 import * as I from '../types'
 

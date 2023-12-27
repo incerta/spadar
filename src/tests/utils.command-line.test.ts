@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { initCli, collectFlags } from '../utils/command-line'
+import { initCli, collectFlags, cmd } from '../utils/command-line'
 
 it('collectFlags: RequiredPropSchema should throw if required flag value is not specified', () => {
   let stringThrown = false
@@ -161,8 +161,8 @@ it('initCli: should throw error when empty string is found in "commandPath"', ()
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check', ''], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check', ''], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrown = true
@@ -176,9 +176,9 @@ it('initCli: should throw error if flags is found in "commandPath"', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check'], {}, () => undefined],
-      [['-withFlag'], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check'], cmd({}, () => undefined)],
+      [['-withFlag'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrown1 = true
@@ -190,9 +190,9 @@ it('initCli: should throw error if flags is found in "commandPath"', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check'], {}, () => undefined],
-      [['-withFlag'], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check'], cmd({}, () => undefined)],
+      [['-withFlag'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrown2 = true
@@ -208,8 +208,8 @@ it('initCli: should throw error when whitespace is found in "commandPath" arr', 
 
   try {
     initCli([
-      [['check'], {}, () => undefined],
-      [['check', 'che ck'], {}, () => undefined],
+      [['check'], cmd({}, () => undefined)],
+      [['check', 'che ck'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase1 = true
@@ -223,8 +223,8 @@ it('initCli: should throw error when whitespace is found in "commandPath" arr', 
 
   try {
     initCli([
-      [['check'], {}, () => undefined],
-      [['check', 'che\nck'], {}, () => undefined],
+      [['check'], cmd({}, () => undefined)],
+      [['check', 'che\nck'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase2 = true
@@ -240,8 +240,8 @@ it('initCli: should throw error if found "commandPath" duplicates', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['one'], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['one'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase0 = true
@@ -255,8 +255,8 @@ it('initCli: should throw error if found "commandPath" duplicates', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [[], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [[], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase1 = true
@@ -270,9 +270,9 @@ it('initCli: should throw error if found "commandPath" duplicates', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check'], {}, () => undefined],
-      [[], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check'], cmd({}, () => undefined)],
+      [[], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase2 = true
@@ -286,9 +286,9 @@ it('initCli: should throw error if found "commandPath" duplicates', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check'], {}, () => undefined],
-      [['check'], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check'], cmd({}, () => undefined)],
+      [['check'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase3 = true
@@ -302,10 +302,10 @@ it('initCli: should throw error if found "commandPath" duplicates', () => {
 
   try {
     initCli([
-      [[], {}, () => undefined],
-      [['check', 'one'], {}, () => undefined],
-      [['check', 'two'], {}, () => undefined],
-      [['check', 'one'], {}, () => undefined],
+      [[], cmd({}, () => undefined)],
+      [['check', 'one'], cmd({}, () => undefined)],
+      [['check', 'two'], cmd({}, () => undefined)],
+      [['check', 'one'], cmd({}, () => undefined)],
     ])([])
   } catch (_) {
     isThrownCase4 = true
@@ -318,7 +318,7 @@ it('initCli: should throw if there is no command match for the given "argv"', ()
   let isThrown = false
 
   try {
-    initCli([[['not-check'], {}, () => undefined]])(['check'])
+    initCli([[['not-check'], cmd({}, () => undefined)]])(['check'])
   } catch (_) {
     isThrown = true
   }
@@ -331,8 +331,8 @@ it('initCli: should call empty "commandPath" callback if "argv" is empty', () =>
   const mockFn1 = jest.fn()
 
   initCli([
-    [[], {}, mockFn0],
-    [['case1'], {}, mockFn1],
+    [[], cmd({}, mockFn0)],
+    [['case1'], cmd({}, mockFn1)],
   ])([])
 
   expect(mockFn0).toHaveBeenCalledTimes(1)
@@ -346,10 +346,10 @@ it('initCli: should call correct command commandPath.length === 1', () => {
   const mockFn3 = jest.fn()
 
   initCli([
-    [[], {}, mockFn0],
-    [['case1'], {}, mockFn1],
-    [['case2'], {}, mockFn2],
-    [['case3'], {}, mockFn3],
+    [[], cmd({}, mockFn0)],
+    [['case1'], cmd({}, mockFn1)],
+    [['case2'], cmd({}, mockFn2)],
+    [['case3'], cmd({}, mockFn3)],
   ])(['case2'])
 
   expect(mockFn0).toHaveBeenCalledTimes(0)
@@ -364,9 +364,9 @@ it('initCli: should call correct command commandPath.length === 2', () => {
   const mockFn3 = jest.fn()
 
   initCli([
-    [['case1', 'subCase1'], {}, mockFn1],
-    [['case2', 'subCase2'], {}, mockFn2],
-    [['case3', 'subCase3'], {}, mockFn3],
+    [['case1', 'subCase1'], cmd({}, mockFn1)],
+    [['case2', 'subCase2'], cmd({}, mockFn2)],
+    [['case3', 'subCase3'], cmd({}, mockFn3)],
   ])(['case2', 'subCase2'])
 
   expect(mockFn1).toHaveBeenCalledTimes(0)
@@ -380,9 +380,9 @@ it('initCli: should call correct command commandPath.length === 3', () => {
   const mockFn3 = jest.fn()
 
   initCli([
-    [['case', 'subCase', 'subSubCase'], {}, mockFn1],
-    [['case', 'subCase', 'subSubCase2'], {}, mockFn2],
-    [['case', 'subCase', 'uniqueCase'], {}, mockFn3],
+    [['case', 'subCase', 'subSubCase'], cmd({}, mockFn1)],
+    [['case', 'subCase', 'subSubCase2'], cmd({}, mockFn2)],
+    [['case', 'subCase', 'uniqueCase'], cmd({}, mockFn3)],
   ])(['case', 'subCase', 'uniqueCase'])
 
   expect(mockFn1).toHaveBeenCalledTimes(0)
@@ -396,23 +396,28 @@ it('initCli: should parse flags properly', () => {
   initCli([
     [
       ['check'],
-      {
-        stringCase: 'string',
-        numberCase: 'number',
-        booleanCaseFalse: 'boolean',
-        booleanCaseTrue: 'boolean',
-        justFlagBooleanCase: 'boolean',
-        noFlagBooleanCase: 'boolean',
-        bufferCase: 'Buffer',
-        optionalDefaultStringSpecified: { type: 'string', default: 'default' },
-        optionalDefaultStringNotSpecified: {
-          type: 'string',
-          default: 'default',
+      cmd(
+        {
+          stringCase: 'string',
+          numberCase: 'number',
+          booleanCaseFalse: 'boolean',
+          booleanCaseTrue: 'boolean',
+          justFlagBooleanCase: 'boolean',
+          noFlagBooleanCase: 'boolean',
+          bufferCase: 'Buffer',
+          optionalDefaultStringSpecified: {
+            type: 'string',
+            default: 'default',
+          },
+          optionalDefaultStringNotSpecified: {
+            type: 'string',
+            default: 'default',
+          },
         },
-      },
-      (parsedFlags) => {
-        resultFlags = parsedFlags
-      },
+        (parsedFlags) => {
+          resultFlags = parsedFlags
+        }
+      ),
     ],
   ])([
     'check',

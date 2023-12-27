@@ -4,13 +4,7 @@ import { resolvePath } from './path'
 
 import * as I from '../types'
 
-type Command<T extends Record<string, I.PropSchema>, U> = [
-  commandPath: string[],
-  flagsSchema: T,
-  callback: U
-]
-
-type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
+type OptionalProp<T extends I.ObjectPropSchema, U> = T extends {
   required: true
 }
   ? U
@@ -18,15 +12,15 @@ type OptionalizeProp<T extends I.ObjectPropSchema, U> = T extends {
 
 type ParsedFlags<T extends Record<string, I.PropSchema>> = {
   [k in keyof T]: T[k] extends I.StringPropSchema
-    ? OptionalizeProp<T[k], string>
+    ? OptionalProp<T[k], string>
     : T[k] extends I.NumberPropSchema
-    ? OptionalizeProp<T[k], number>
+    ? OptionalProp<T[k], number>
     : T[k] extends I.BooleanPropSchema
-    ? OptionalizeProp<T[k], boolean>
+    ? OptionalProp<T[k], boolean>
     : T[k] extends I.BufferPropSchema
-    ? OptionalizeProp<T[k], Buffer>
+    ? OptionalProp<T[k], Buffer>
     : T[k] extends I.StringUnionPropSchema
-    ? OptionalizeProp<T[k], T[k]['of'][0]>
+    ? OptionalProp<T[k], T[k]['of'][0]>
     : T[k] extends 'string'
     ? string
     : T[k] extends 'number'
@@ -40,7 +34,7 @@ type ParsedFlags<T extends Record<string, I.PropSchema>> = {
 
 export const getIsRunningInPipe = () => !process.stdin.isTTY
 
-export const getCLIPipeMessege = (): Promise<string> =>
+export const getCLIPipeMessage = (): Promise<string> =>
   new Promise((resolve) => {
     let message = ''
 
@@ -233,37 +227,71 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
   return result
 }
 
+export const cmd = <T extends Record<string, I.PropSchema>>(
+  flagsSchema: T,
+  callback: (flags: ParsedFlags<T>, pipeInput: unknown) => void
+) => {
+  return (argv: string[]) => {
+    const parsedFlags = collectFlags(flagsSchema, argv)
+    const pipeInput = (() => {
+      if (process.env['NODE_ENV'] !== 'test' && getIsRunningInPipe()) {
+        getCLIPipeMessage().then((data) => {
+          const parsedData = ((): unknown => {
+            try {
+              return JSON.parse(data)
+            } catch (_) {
+              return data
+            }
+          })()
+
+          return parsedData
+        })
+      }
+
+      return undefined
+    })()
+
+    callback(parsedFlags, pipeInput)
+  }
+}
+
 /**
  * @example
  *
  * ```typescript
  * initCli([
  *   // ROOT command
- *   [[], { h: { type: 'boolean' }, help: { type: 'boolean'} }, ({ h, help }) => {
- *     if (h || help) {
- *       console.log('Nobody will help you and you will die alone')
- *     }
- *   }],
+ *   [
+ *     [],
+ *     cmd(
+ *      { h: { type: 'boolean' }, help: { type: 'boolean'} },
+ *      ({ h, help }) => {
+ *        if (h || help) {
+ *         console.log('Nobody will help you and you will die alone')
+ *        }
+ *      }
+ *     )
+ *   ],
  *
  *   // First level command
  *   [
  *     ['textToText'],
- *     { h: { type: 'boolean' }, help: { type: 'boolean'} },
- *     ({ h, help }) => {}
- *   }],
+ *     cmd(
+ *       { h: { type: 'boolean' }, help: { type: 'boolean'} },
+ *       ({ h, help }) => {}
+ *     )
+ *   ],
  *
  *   // Third level command
- *   [['textToText', 'spadar-openai', 'GPT.string.string'], {}, () => {
- *      //...
- *   }],
+ *   [
+ *    ['textToText', 'spadar-openai', 'GPT.string.string'],
+ *    cmd({}, () => { //... })
+ *   ],
  * ])(process.argv.slice(2))
  * ```
  **/
-export const initCli = <
-  T extends Record<string, I.PropSchema>,
-  U extends (flags: ParsedFlags<T>, pipeInput?: unknown) => void
->(
-  commands: Command<T, U>[]
+export const initCli = (
+  commands: Array<[string[], ReturnType<typeof cmd>]>
 ): ((argv: string[]) => void) => {
   /**
    * Validate `commandPath` compatibility with each other
@@ -317,7 +345,7 @@ export const initCli = <
         `)
       }
 
-      const isPathesEquall = (() => {
+      const isPathsEqual = (() => {
         if (commandPath.length !== referenceCommandPath.length) {
           return false
         }
@@ -331,7 +359,7 @@ export const initCli = <
         return true
       })()
 
-      if (isPathesEquall) {
+      if (isPathsEqual) {
         throw new SpadarError(`
             Found "CommandPath" duplicate:
             [${commandPath.map((x) => `"${x}"`).join(', ')}]
@@ -343,21 +371,16 @@ export const initCli = <
 
   const getPathLiteral = (pathChunks: string[]) => pathChunks.join('')
 
-  const commandByPathLiteral = commands.reduce<Map<string, Command<T, U>>>(
-    (acc, command) => {
-      const [commandPath] = command
-      acc.set(getPathLiteral(commandPath), command)
-      return acc
-    },
-    new Map()
-  )
+  const commandByPathLiteral = commands.reduce<
+    Map<string, [string[], ReturnType<typeof cmd>]>
+  >((acc, command) => {
+    const [commandPath] = command
+    acc.set(getPathLiteral(commandPath), command)
+    return acc
+  }, new Map())
 
-  /**
-   * @param argv - sequence of commands initially passed from `process.argv.slice(2)`,
-   *               for the `initCli` function we want to allow its usage recursively
-   **/
   return (argv: string[]) => {
-    const command = ((): Command<T, U> | undefined => {
+    const command = ((): [string[], ReturnType<typeof cmd>] | undefined => {
       const argvCommandPathLiteral = (() => {
         const pathChunks: string[] = []
 
@@ -377,32 +400,14 @@ export const initCli = <
 
     if (typeof command === 'undefined') {
       const errorMessage = argv.length
-        ? `The follwoing command is not exists: ${argv.join(' ')}`
+        ? `The following command is not exists: ${argv.join(' ')}`
         : 'No commands is provided'
 
       throw new SpadarError(errorMessage)
     }
 
-    const flagsSchema = command[1]
-    const callback = command[2]
-    const collectedFlags = collectFlags(flagsSchema, argv)
+    const callback = command[1]
 
-    if (process.env['NODE_ENV'] !== 'test' && getIsRunningInPipe()) {
-      getCLIPipeMessege().then((data) => {
-        const parsedData = ((): unknown => {
-          try {
-            return JSON.parse(data)
-          } catch (_) {
-            return data
-          }
-        })()
-
-        callback(collectedFlags, parsedData)
-      })
-
-      return
-    }
-
-    callback(collectedFlags)
+    callback(argv)
   }
 }
