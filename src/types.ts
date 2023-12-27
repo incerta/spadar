@@ -127,6 +127,34 @@ export type ObjectUnitSchema = {
 export type PayloadUnitSchema = 'string' | 'Buffer'
 export type UnitSchema = ObjectUnitSchema | PayloadUnitSchema
 
+type OptionalProp<T extends ObjectPropSchema, U> = T extends {
+  required: true
+}
+  ? U
+  : U | undefined
+
+export type SchemaToType<T extends Record<string, PropSchema>> = {
+  [k in keyof T]: T[k] extends StringPropSchema
+    ? OptionalProp<T[k], string>
+    : T[k] extends NumberPropSchema
+    ? OptionalProp<T[k], number>
+    : T[k] extends BooleanPropSchema
+    ? OptionalProp<T[k], boolean>
+    : T[k] extends BufferPropSchema
+    ? OptionalProp<T[k], Buffer>
+    : T[k] extends StringUnionPropSchema
+    ? OptionalProp<T[k], T[k]['of'][0]>
+    : T[k] extends 'string'
+    ? string
+    : T[k] extends 'number'
+    ? number
+    : T[k] extends 'boolean'
+    ? boolean
+    : T[k] extends 'Buffer'
+    ? Buffer
+    : never
+}
+
 // TODO: consider OrderSchema entity existence as representation of
 //       given list of UNITs wrapped by Object with meta information
 

@@ -4,34 +4,6 @@ import { resolvePath } from './path'
 
 import * as I from '../types'
 
-type OptionalProp<T extends I.ObjectPropSchema, U> = T extends {
-  required: true
-}
-  ? U
-  : U | undefined
-
-type ParsedFlags<T extends Record<string, I.PropSchema>> = {
-  [k in keyof T]: T[k] extends I.StringPropSchema
-    ? OptionalProp<T[k], string>
-    : T[k] extends I.NumberPropSchema
-    ? OptionalProp<T[k], number>
-    : T[k] extends I.BooleanPropSchema
-    ? OptionalProp<T[k], boolean>
-    : T[k] extends I.BufferPropSchema
-    ? OptionalProp<T[k], Buffer>
-    : T[k] extends I.StringUnionPropSchema
-    ? OptionalProp<T[k], T[k]['of'][0]>
-    : T[k] extends 'string'
-    ? string
-    : T[k] extends 'number'
-    ? number
-    : T[k] extends 'boolean'
-    ? boolean
-    : T[k] extends 'Buffer'
-    ? Buffer
-    : never
-}
-
 export const getIsRunningInPipe = () => !process.stdin.isTTY
 
 export const getCLIPipeMessage = (): Promise<string> =>
@@ -55,7 +27,7 @@ const reduceToBuffer = (filePath: string): Buffer => {
 export const collectFlags = <T extends Record<string, I.PropSchema>>(
   schema: T,
   argv: string[]
-): ParsedFlags<T> => {
+): I.SchemaToType<T> => {
   // eslint-disable-next-line
   const result: any = {}
 
@@ -229,7 +201,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 
 export const cmd = <T extends Record<string, I.PropSchema>>(
   flagsSchema: T,
-  callback: (flags: ParsedFlags<T>, pipeInput: unknown) => void
+  callback: (flags: I.SchemaToType<T>, pipeInput: unknown) => void
 ) => {
   return (argv: string[]) => {
     const parsedFlags = collectFlags(flagsSchema, argv)

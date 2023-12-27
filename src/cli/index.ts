@@ -1,7 +1,9 @@
 import dedent from 'dedent'
 
 import config from '../config'
+import { SpadarError } from '../utils/error'
 import { initCli, cmd } from '../utils/command-line'
+import { getMediator } from '../utils/mediator'
 
 import { runChat } from './chat'
 import { runAdapter } from './adapter'
@@ -103,14 +105,24 @@ const runCli = initCli([
 
   [
     ['chat'],
-    cmd(
-      {
-        model: { type: 'stringUnion', of: ['one', 'two'] },
-        fromClipboard: { type: 'boolean' },
-        help: { type: 'boolean' },
-      },
-      runChat
-    ),
+    cmd({}, (_options, pipeInput) => {
+      const mediator = getMediator(config.availableAdapters)
+
+      // FIXME: debug pipeInput message
+      const initialMessage =
+        typeof pipeInput === 'string' ? pipeInput : undefined
+
+      // FIXME: the comman should pass `options` based on parsed flags
+      const streamMessageRequest =
+        mediator.textToText?.['outside-adapter']?.openai?.chatMessageArr
+          ?.stringStream
+
+      if (streamMessageRequest === undefined) {
+        throw new SpadarError('Cant find required adapater function')
+      }
+
+      runChat(streamMessageRequest)
+    }),
   ],
 ])
 

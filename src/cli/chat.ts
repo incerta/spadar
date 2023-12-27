@@ -1,47 +1,16 @@
-import { execSync } from 'child_process'
 import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
-import * as cmd from '../utils/command-line'
 import { getUserPrompt } from '../utils/interactive-cli'
-import { complitionStreamFactory } from '../utils/text-generator'
-import { getTextAdapter } from '../utils/deprecated-adapter'
+
+import * as I from '../types'
 
 type Message = {
   role: 'system' | 'assistant' | 'user'
   content: string
 }
 
-const DEFAULT_TEXT_MODEL = 'gpt-4'
-
 const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
-// FIXME: we actually don't need it, if someone wants to
-//        pass the message from clipboard to chat for example
-//        they could use cli pipes, for macos the command
-//        could look like:
-//        ```
-//        pbpaste | spadar chat spadar-openai GPT
-//        ```
-export function getClipboardText(): string | null {
-  const command = ((): string => {
-    switch (process.platform) {
-      case 'darwin':
-        return 'pbpaste'
-      // TODO: did't actually tested on `windows` yet
-      case 'win32':
-        return 'powershell.exe -command "Get-Clipboard"'
-      default:
-        // TODO: try to find solution that works without `xclip` util
-        return 'xclip -selection clipboard -o' // Linux (requires xclip to be installed)
-    }
-  })()
-
-  const output = execSync(command, { encoding: 'utf-8' })
-
-  if (typeof output !== 'string') return null
-
-  return output.trim()
-}
 
 export const displayConverstaionContext = (messages: Message[]) => {
   console.log('\n\nConverstaion context:')
@@ -115,52 +84,52 @@ const conversation = async (
   return conversation(ai, chatHistory)
 }
 
-const runCLIChat = (
-  options: { model: string; connectorId?: string },
-  initialMessages?: Message[]
+export const runChat = (
+  streamMessageRequest: (
+    options: Record<string, unknown>,
+    unit: Array<{
+      unitId: 'chatMessage'
+      role: 'system' | 'user' | 'assistant'
+      payload: string
+    }>
+  ) => Promise<unknown>
 ) => {
-  const adapter = getTextAdapter(options.model, options.connectorId)
-  const runComplitionStream = complitionStreamFactory(
-    adapter.chatToAnswerStream
-  )
+  // FIXME: move to arguments
+  const initialMessages: Message[] = []
 
   return conversation(
     {
-      processAnswerRequest: (messages) =>
-        runComplitionStream(options, messages),
+      processAnswerRequest: async (messages) => {
+        const mappedMessages = messages.map((message) => ({
+          unitId: 'chatMessage' as const,
+          role: message.role,
+          payload: message.content,
+        }))
+
+        const { stream, stop } = await (streamMessageRequest(
+          {},
+          mappedMessages
+        ) as Promise<I.StreamOf<string>>)
+
+        return {
+          cancel: stop || (() => undefined),
+          requestAnswerStream: (
+            onStreamChunkReceived: (messageChunk: string) => void
+          ): Promise<string> => {
+            return new Promise(async (resolve) => {
+              let completeMessage = ''
+
+              for await (const token of stream) {
+                completeMessage += token
+                onStreamChunkReceived(token)
+              }
+
+              resolve(completeMessage)
+            })
+          },
+        }
+      },
     },
     initialMessages
   )
-}
-
-export const runChat = async (flags: {
-  model?: string
-  fromClipboard?: boolean
-}) => {
-  const options = {
-    model: flags.model || DEFAULT_TEXT_MODEL,
-  }
-
-  if (flags.fromClipboard) {
-    const clipboardText = getClipboardText()
-
-    if (clipboardText) {
-      const messages: Message[] = [{ role: 'user', content: clipboardText }]
-
-      displayConverstaionContext(messages)
-      runCLIChat(options, messages)
-      return
-    }
-  }
-
-  if (cmd.getIsRunningInPipe()) {
-    const messageFromPipe = await cmd.getCLIPipeMessege()
-    const messages: Message[] = [{ role: 'user', content: messageFromPipe }]
-
-    displayConverstaionContext(messages)
-    runCLIChat(options, messages)
-    return
-  }
-
-  runCLIChat(options)
 }
