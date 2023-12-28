@@ -67,6 +67,9 @@ export type BufferPropSchema = PropSchemaBase<Buffer> & {
  * { type: 'stringUnion', of: ['one', 'two'] }
  *
  * result type: 'one' | 'two'
+ *
+ * TODO: if `default` value is specified check if its one of
+ *       the `of` members on `spadar adapter --generate` cmd
  **/
 export type StringUnionPropSchema = PropSchemaBase<string> & {
   type: 'stringUnion'

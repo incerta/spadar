@@ -907,3 +907,130 @@ export const getRequirementToSchemaMatches = (
 
   return matches.length === 0 ? undefined : matches
 }
+
+export const validateByPropSchema = (
+  propSchema: I.PropSchema,
+  value: unknown
+): true | 'typeError' | 'rangeError' => {
+  if (typeof propSchema === 'string') {
+    switch (propSchema) {
+      case 'string': {
+        return typeof value === 'string' || 'typeError'
+      }
+      case 'number': {
+        if (typeof value === 'number') {
+          return isFinite(value) || 'typeError'
+        }
+
+        return 'typeError'
+      }
+      case 'boolean': {
+        return typeof value === 'boolean' || 'typeError'
+      }
+      case 'Buffer': {
+        return value instanceof Buffer || 'typeError'
+      }
+    }
+  }
+
+  if (
+    !propSchema.required &&
+    typeof propSchema.default === 'undefined' &&
+    typeof value === 'undefined'
+  ) {
+    return true
+  }
+
+  switch (propSchema.type) {
+    case 'string': {
+      if (typeof value !== 'string') {
+        return 'typeError'
+      }
+
+      const isValidByMin =
+        typeof propSchema.minLength === 'number'
+          ? value.length >= propSchema.minLength
+          : true
+
+      const isValidByMax =
+        typeof propSchema.maxLength === 'number'
+          ? value.length <= propSchema.maxLength
+          : true
+
+      if (isValidByMin === false || isValidByMax === false) {
+        return 'rangeError'
+      }
+
+      return true
+    }
+
+    case 'number': {
+      if (typeof value !== 'number') {
+        return 'typeError'
+      }
+
+      if (isFinite(value) === false) {
+        return 'typeError'
+      }
+
+      const isValidByMin =
+        typeof propSchema.min === 'number' ? value >= propSchema.min : true
+
+      const isValidByMax =
+        typeof propSchema.max === 'number' ? value <= propSchema.max : true
+
+      if (isValidByMin === false || isValidByMax === false) {
+        return 'rangeError'
+      }
+
+      return true
+    }
+
+    case 'boolean': {
+      return typeof value === 'boolean' || 'typeError'
+    }
+
+    case 'Buffer': {
+      if (value instanceof Buffer) {
+        const isValidByMin =
+          typeof propSchema.minLength === 'number'
+            ? value.length >= propSchema.minLength
+            : true
+
+        const isValidByMax =
+          typeof propSchema.maxLength === 'number'
+            ? value.length <= propSchema.maxLength
+            : true
+
+        if (isValidByMin === false || isValidByMax === false) {
+          return 'rangeError'
+        }
+        return true
+      }
+
+      return 'typeError'
+    }
+
+    case 'stringUnion': {
+      if (typeof value !== 'string') {
+        return 'typeError'
+      }
+
+      const set = new Set(propSchema.of)
+
+      if (set.has(value) === false) {
+        return 'typeError'
+      }
+
+      return true
+    }
+  }
+}
+
+export const validateBySchema = (
+  schema: Record<string, I.PropSchema>,
+  runtimeObject: unknown
+): true | string => {
+  console.log(schema, runtimeObject)
+  throw Error('Not implemented')
+}

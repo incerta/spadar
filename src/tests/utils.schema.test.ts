@@ -1717,3 +1717,334 @@ it(`getIsIOSchemaMatch: ObjectUnitSchema array`, () => {
   expect(schema.getIsIOSchemaMatch([x, [y]], [[x], [y]])).toBe(false)
   expect(schema.getIsIOSchemaMatch([x, y], [[x], [y]])).toBe(false)
 })
+
+it('validateByPropSchema: RequiredPropSchema', () => {
+  expect(schema.validateByPropSchema('string', 'stringValue')).toBe(true)
+  expect(schema.validateByPropSchema('string', undefined)).toBe('typeError')
+  expect(schema.validateByPropSchema('string', null)).toBe('typeError')
+  expect(schema.validateByPropSchema('string', {})).toBe('typeError')
+  expect(schema.validateByPropSchema('string', 12)).toBe('typeError')
+  expect(schema.validateByPropSchema('string', true)).toBe('typeError')
+  expect(schema.validateByPropSchema('string', false)).toBe('typeError')
+  expect(schema.validateByPropSchema('string', Buffer.from('check'))).toBe(
+    'typeError'
+  )
+
+  expect(schema.validateByPropSchema('number', 12)).toBe(true)
+  expect(schema.validateByPropSchema('number', 0)).toBe(true)
+  expect(schema.validateByPropSchema('number', -100)).toBe(true)
+  expect(schema.validateByPropSchema('number', undefined)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', null)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', {})).toBe('typeError')
+  expect(schema.validateByPropSchema('number', NaN)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', Infinity)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', -Infinity)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', 'stringValue')).toBe('typeError')
+  expect(schema.validateByPropSchema('number', true)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', false)).toBe('typeError')
+  expect(schema.validateByPropSchema('number', Buffer.from('check'))).toBe(
+    'typeError'
+  )
+
+  expect(schema.validateByPropSchema('boolean', true)).toBe(true)
+  expect(schema.validateByPropSchema('boolean', false)).toBe(true)
+  expect(schema.validateByPropSchema('boolean', undefined)).toBe('typeError')
+  expect(schema.validateByPropSchema('boolean', null)).toBe('typeError')
+  expect(schema.validateByPropSchema('boolean', {})).toBe('typeError')
+  expect(schema.validateByPropSchema('boolean', 'stringValue')).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema('boolean', 12)).toBe('typeError')
+  expect(schema.validateByPropSchema('boolean', Buffer.from('check'))).toBe(
+    'typeError'
+  )
+
+  expect(schema.validateByPropSchema('Buffer', Buffer.from('check'))).toBe(true)
+  expect(schema.validateByPropSchema('Buffer', undefined)).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', null)).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', {})).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', 'stringValue')).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', 12)).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', false)).toBe('typeError')
+  expect(schema.validateByPropSchema('Buffer', true)).toBe('typeError')
+})
+
+it('validateValueByPropSchema: ObjectPropSchema optional', () => {
+  /* type: 'string' */
+
+  expect(schema.validateByPropSchema({ type: 'string' }, 'stringValue')).toBe(
+    true
+  )
+  expect(schema.validateByPropSchema({ type: 'string' }, undefined)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'string' }, null)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'string' }, 12)).toBe('typeError')
+  expect(schema.validateByPropSchema({ type: 'string' }, true)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'string' }, false)).toBe(
+    'typeError'
+  )
+  expect(
+    schema.validateByPropSchema({ type: 'string' }, Buffer.from('check'))
+  ).toBe('typeError')
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11 },
+      'stringValue'
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', maxLength: 11 },
+      'stringValue'
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11, maxLength: 11 },
+      'stringValue'
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', maxLength: 11 },
+      'stringValue'.slice(1)
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11 },
+      'stringValue'.slice(1)
+    )
+  ).toBe('rangeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11, maxLength: 11 },
+      'stringValue'.slice(1)
+    )
+  ).toBe('rangeError')
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11 },
+      'stringValue' + 'x'
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', maxLength: 11 },
+      'stringValue' + 'x'
+    )
+  ).toBe('rangeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'string', minLength: 11, maxLength: 11 },
+      'stringValue' + 'x'
+    )
+  ).toBe('rangeError')
+
+  /* type: 'number' */
+
+  expect(schema.validateByPropSchema({ type: 'number' }, 12)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'number' }, 0)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'number' }, -100)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'number' }, undefined)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'number' }, null)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'number' }, {})).toBe('typeError')
+  expect(schema.validateByPropSchema({ type: 'number' }, NaN)).toBe('typeError')
+  expect(schema.validateByPropSchema({ type: 'number' }, Infinity)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'number' }, -Infinity)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'number' }, 'stringValue')).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'number' }, true)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'number' }, false)).toBe(
+    'typeError'
+  )
+  expect(
+    schema.validateByPropSchema({ type: 'number' }, Buffer.from('check'))
+  ).toBe('typeError')
+
+  /* type: 'boolean' */
+
+  expect(schema.validateByPropSchema({ type: 'boolean' }, true)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'boolean' }, false)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'boolean' }, undefined)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'boolean' }, null)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'boolean' }, 'stringValue')).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'boolean' }, 12)).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'boolean' }, Buffer.from('check'))
+  ).toBe('typeError')
+
+  /* type: 'Buffer' */
+
+  expect(
+    schema.validateByPropSchema({ type: 'Buffer' }, Buffer.from('check'))
+  ).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, undefined)).toBe(true)
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, null)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, {})).toBe('typeError')
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, 'stringValue')).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, 12)).toBe('typeError')
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, false)).toBe(
+    'typeError'
+  )
+  expect(schema.validateByPropSchema({ type: 'Buffer' }, true)).toBe(
+    'typeError'
+  )
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', minLength: 5, maxLength: 5 },
+      Buffer.from('check')
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', maxLength: 5 },
+      Buffer.from('check')
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', minLength: 5 },
+      Buffer.from('check')
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', minLength: 5, maxLength: 5 },
+      Buffer.from('check' + 'x')
+    )
+  ).toBe('rangeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', maxLength: 5 },
+      Buffer.from('check' + 'x')
+    )
+  ).toBe('rangeError')
+
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', minLength: 5, maxLength: 5 },
+      Buffer.from('check'.slice(1))
+    )
+  ).toBe('rangeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', minLength: 5 },
+      Buffer.from('check'.slice(1))
+    )
+  ).toBe('rangeError')
+
+  /* type: 'stringUnion' */
+
+  expect(
+    schema.validateByPropSchema(
+      {
+        type: 'stringUnion',
+        of: ['one', 'two'],
+      },
+      'one'
+    )
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema(
+      {
+        type: 'stringUnion',
+        of: ['one', 'two'],
+      },
+      'two'
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateByPropSchema(
+      {
+        type: 'stringUnion',
+        of: ['one', 'two'],
+      },
+      'two' + 'x'
+    )
+  ).toBe('typeError')
+
+  expect(
+    schema.validateByPropSchema({ type: 'stringUnion', of: ['x'] }, undefined)
+  ).toBe(true)
+  expect(
+    schema.validateByPropSchema({ type: 'stringUnion', of: ['x'] }, null)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'stringUnion', of: ['x'] }, {})
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'stringUnion', of: ['x'] }, 12)
+  ).toBe('typeError')
+})
+
+it('validateValueByPropSchema: ObjectPropSchema required "typeError"', () => {
+  expect(
+    schema.validateByPropSchema({ type: 'string', required: true }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'number', required: true }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'boolean', required: true }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'Buffer', required: true }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'stringUnion', of: ['x'], required: true },
+      undefined
+    )
+  ).toBe('typeError')
+})
+
+it('validateValueByPropSchema: ObjectPropSchema default "typeError"', () => {
+  expect(
+    schema.validateByPropSchema({ type: 'string', default: 'x' }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'number', default: 12 }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema({ type: 'boolean', default: true }, undefined)
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'Buffer', default: Buffer.from('check') },
+      undefined
+    )
+  ).toBe('typeError')
+  expect(
+    schema.validateByPropSchema(
+      { type: 'stringUnion', of: ['x'], default: 'y' },
+      undefined
+    )
+  ).toBe('typeError')
+})
