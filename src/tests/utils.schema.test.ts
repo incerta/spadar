@@ -2048,3 +2048,55 @@ it('validateValueByPropSchema: ObjectPropSchema default "typeError"', () => {
     )
   ).toBe('typeError')
 })
+
+it('validateBySchema: check `rangeError` and `typeError` cases', () => {
+  expect(
+    schema.validateBySchema(
+      {
+        a: 'string',
+        b: 'number',
+      },
+      { a: 'check', b: 12 }
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateBySchema(
+      {
+        a: 'string',
+        b: 'number',
+      },
+      { a: 'check' }
+    )
+  ).toEqual({ errorType: 'typeError', schemaKey: 'b' })
+
+  expect(
+    schema.validateBySchema(
+      {
+        a: { type: 'string', required: true, minLength: 5, maxLength: 5 },
+        b: { type: 'number', required: true, min: 12, max: 12 },
+      },
+      { a: 'check', b: 12 }
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateBySchema(
+      {
+        a: { type: 'string', required: true, minLength: 5, maxLength: 5 },
+        b: { type: 'number', required: true, min: 12, max: 12 },
+      },
+      { a: 'check' + 'x', b: 12 }
+    )
+  ).toEqual({ schemaKey: 'a', errorType: 'rangeError' })
+
+  expect(
+    schema.validateBySchema(
+      {
+        a: { type: 'string', required: true, minLength: 5, maxLength: 5 },
+        b: { type: 'number', required: true, min: 12, max: 12 },
+      },
+      { a: 'check', b: 13 }
+    )
+  ).toEqual({ schemaKey: 'b', errorType: 'rangeError' })
+})

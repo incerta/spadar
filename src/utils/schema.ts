@@ -1029,8 +1029,27 @@ export const validateByPropSchema = (
 
 export const validateBySchema = (
   schema: Record<string, I.PropSchema>,
-  runtimeObject: unknown
-): true | string => {
-  console.log(schema, runtimeObject)
-  throw Error('Not implemented')
+  runtimeObject: Record<string, unknown>
+):
+  | true
+  | {
+      schemaKey: string
+      errorType: 'rangeError' | 'typeError'
+    } => {
+  for (const key in schema) {
+    const propSchema = schema[key]
+    const validationResult = validateByPropSchema(
+      propSchema,
+      runtimeObject[key]
+    )
+
+    if (validationResult !== true) {
+      return {
+        schemaKey: key,
+        errorType: validationResult,
+      }
+    }
+  }
+
+  return true
 }
