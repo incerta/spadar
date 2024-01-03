@@ -4,7 +4,7 @@ import { initCli, collectFlags, cmd } from '../utils/command-line'
 it('collectFlags: RequiredPropSchema should throw if required flag value is not specified', () => {
   let stringThrown = false
   try {
-    collectFlags({ x: 'string' }, ['--x'])
+    collectFlags({ x: 'string' }, ['-x'])
   } catch (_) {
     stringThrown = true
   }
@@ -12,7 +12,7 @@ it('collectFlags: RequiredPropSchema should throw if required flag value is not 
 
   let numberThrown = false
   try {
-    collectFlags({ x: 'number' }, ['--x'])
+    collectFlags({ x: 'number' }, ['-x'])
   } catch (_) {
     numberThrown = true
   }
@@ -20,11 +20,27 @@ it('collectFlags: RequiredPropSchema should throw if required flag value is not 
 
   let bufferThrown = false
   try {
-    collectFlags({ x: 'Buffer' }, ['--x'])
+    collectFlags({ x: 'Buffer' }, ['-x'])
   } catch (_) {
     bufferThrown = true
   }
   expect(bufferThrown).toBe(true)
+})
+
+it('collectFlags: flags with one letter is expected to have singular hyphen', () => {
+  expect(collectFlags({ x: 'boolean' }, ['-x'])).toEqual({ x: true })
+  expect(collectFlags({ x: 'boolean' }, ['--x'])).toEqual({ x: false })
+  expect(collectFlags({ x: 'string' }, ['-x', 'value'])).toEqual({ x: 'value' })
+  expect(collectFlags({ x: 'string' }, ['--x', 'value'])).toEqual({})
+})
+
+it('collectFlags: flags with more then one letter is expected to have double hyphen', () => {
+  expect(collectFlags({ xx: 'boolean' }, ['-xx'])).toEqual({ xx: false })
+  expect(collectFlags({ xx: 'boolean' }, ['--xx'])).toEqual({ xx: true })
+  expect(collectFlags({ xx: 'string' }, ['-xx', 'value'])).toEqual({})
+  expect(collectFlags({ xx: 'string' }, ['--xx', 'value'])).toEqual({
+    xx: 'value',
+  })
 })
 
 it('collectFlags: "Buffer" schemas should assume filePath as source of the Buffer', () => {
@@ -35,12 +51,12 @@ it('collectFlags: "Buffer" schemas should assume filePath as source of the Buffe
   fs.mkdirSync(dirPath, { recursive: true })
   fs.writeFileSync(filePath, value)
 
-  const { x } = collectFlags({ x: 'Buffer' }, ['--x', filePath])
+  const { x } = collectFlags({ x: 'Buffer' }, ['-x', filePath])
 
-  expect(x instanceof Buffer).toBe(true)
+  expect(Buffer.isBuffer(x)).toBe(true)
   expect(x.toString()).toBe(value)
 
-  const { y } = collectFlags({ y: 'Buffer' }, ['--y', filePath])
+  const { y } = collectFlags({ y: 'Buffer' }, ['-y', filePath])
 
   expect(y instanceof Buffer).toBe(true)
   expect(y.toString()).toBe(value)
@@ -92,37 +108,37 @@ it(`collectFlags: OptionalPropSchema entries with required=true and default=unde
 it.todo('parseFlags: should throw if flag is specified but value is not')
 
 it('collectFlags: RequiredPropSchema cases', () => {
-  expect(collectFlags({ x: 'string' }, ['--x', 'xValue'])).toEqual({
+  expect(collectFlags({ x: 'string' }, ['-x', 'xValue'])).toEqual({
     x: 'xValue',
   })
 
-  expect(collectFlags({ x: 'number' }, ['--x', '1.55'])).toEqual({
+  expect(collectFlags({ x: 'number' }, ['-x', '1.55'])).toEqual({
     x: 1.55,
   })
 
-  expect(collectFlags({ x: 'number' }, ['--x', '124'])).toEqual({
+  expect(collectFlags({ x: 'number' }, ['-x', '124'])).toEqual({
     x: 124,
   })
 
-  expect(collectFlags({ x: 'boolean' }, ['--x'])).toEqual({ x: true })
-  expect(collectFlags({ x: 'boolean' }, ['--x', 'true'])).toEqual({ x: true })
+  expect(collectFlags({ x: 'boolean' }, ['-x'])).toEqual({ x: true })
+  expect(collectFlags({ x: 'boolean' }, ['-x', 'true'])).toEqual({ x: true })
   expect(collectFlags({ x: 'boolean' }, [])).toEqual({ x: false })
 })
 
 it('collectFlags: OptionalPropSchema cases', () => {
   expect(collectFlags({ x: { type: 'string' } }, [])).toEqual({})
-  expect(collectFlags({ x: { type: 'string' } }, ['--x', 'check'])).toEqual({
+  expect(collectFlags({ x: { type: 'string' } }, ['-x', 'check'])).toEqual({
     x: 'check',
   })
 
   expect(collectFlags({ x: { type: 'number' } }, [])).toEqual({})
-  expect(collectFlags({ x: { type: 'number' } }, ['--x', '58'])).toEqual({
+  expect(collectFlags({ x: { type: 'number' } }, ['-x', '58'])).toEqual({
     x: 58,
   })
 
   expect(collectFlags({ x: { type: 'Buffer' } }, [])).toEqual({})
 
-  expect(collectFlags({ x: { type: 'boolean' } }, ['--x'])).toEqual({ x: true })
+  expect(collectFlags({ x: { type: 'boolean' } }, ['-x'])).toEqual({ x: true })
   expect(collectFlags({ x: { type: 'boolean' } }, [])).toEqual({})
 })
 

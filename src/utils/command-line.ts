@@ -33,13 +33,17 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 
   for (const key in schema) {
     const propSchema = schema[key]
-    const flagIndex = argv.findIndex((x) => x === `--${key}`)
+    const expectedFlag = key.length === 1 ? `-${key}` : `--${key}`
+    const flagIndex = argv.findIndex((x) => x === expectedFlag)
+
     const value = argv[flagIndex + 1]
 
     if (flagIndex === -1) {
       if (typeof propSchema === 'object') {
         if (propSchema.required && !propSchema.default) {
-          throw new SpadarError(`The required flag is not specified: --${key}`)
+          throw new SpadarError(
+            `The required flag is not specified: ${expectedFlag}`
+          )
         }
 
         result[key] = propSchema.default
@@ -60,7 +64,9 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
           case 'string': {
             if (typeof value !== 'string') {
               if (typeof propSchema.default !== 'string') {
-                throw new SpadarError(`The --${key} value should be a string`)
+                throw new SpadarError(
+                  `The ${expectedFlag} value should be a string`
+                )
               }
 
               return propSchema.default
@@ -74,7 +80,9 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
 
             if (isFinite(parsedFloat) === false) {
               if (typeof propSchema.default !== 'number') {
-                throw new SpadarError(`The --${key} value should be a number`)
+                throw new SpadarError(
+                  `The ${expectedFlag} value should be a number`
+                )
               }
 
               return propSchema.default
@@ -109,7 +117,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
             if (typeof value !== 'string') {
               if (!propSchema.default) {
                 throw new SpadarError(
-                  `The --${key} value should be path to a file`
+                  `The ${expectedFlag} value should be path to a file`
                 )
               }
 
@@ -124,7 +132,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
               if (typeof propSchema.default !== 'string') {
                 const allowedOptions = propSchema.of.join(', ')
                 throw new SpadarError(
-                  `The --${key} value should be one of: ${allowedOptions}`
+                  `The ${expectedFlag} value should be one of: ${allowedOptions}`
                 )
               }
 
@@ -140,7 +148,9 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
         switch (propSchema) {
           case 'string': {
             if (typeof value !== 'string') {
-              throw new SpadarError(`The --${key} value should be a string`)
+              throw new SpadarError(
+                `The ${expectedFlag} value should be a string`
+              )
             }
 
             return value
@@ -150,7 +160,9 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
             const parsedFloat = parseFloat(value)
 
             if (isFinite(parsedFloat) === false) {
-              throw new SpadarError(`The --${key} value should be a number`)
+              throw new SpadarError(
+                `The ${expectedFlag} value should be a number`
+              )
             }
 
             return parsedFloat
@@ -181,7 +193,7 @@ export const collectFlags = <T extends Record<string, I.PropSchema>>(
           case 'Buffer': {
             if (typeof value !== 'string') {
               throw new SpadarError(
-                `The --${key} value should be path to a file`
+                `The ${expectedFlag} value should be path to a file`
               )
             }
 
@@ -205,25 +217,22 @@ export const cmd = <T extends Record<string, I.PropSchema>>(
 ) => {
   return (argv: string[]) => {
     const parsedFlags = collectFlags(flagsSchema, argv)
-    const pipeInput = (() => {
-      if (process.env['NODE_ENV'] !== 'test' && getIsRunningInPipe()) {
-        getCLIPipeMessage().then((data) => {
-          const parsedData = ((): unknown => {
-            try {
-              return JSON.parse(data)
-            } catch (_) {
-              return data
-            }
-          })()
 
-          return parsedData
-        })
-      }
+    if (process.env['NODE_ENV'] !== 'test' && getIsRunningInPipe()) {
+      return getCLIPipeMessage().then((data) => {
+        const parsedData = ((): unknown => {
+          try {
+            return JSON.parse(data)
+          } catch (_) {
+            return data
+          }
+        })()
 
-      return undefined
-    })()
+        callback(parsedFlags, parsedData)
+      })
+    }
 
-    callback(parsedFlags, pipeInput)
+    callback(parsedFlags, undefined)
   }
 }
 
