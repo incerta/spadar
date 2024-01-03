@@ -120,6 +120,7 @@ const hasAllKeys = (
 //        it is needed but it will be a bad compromise. Better
 //        either not use the hacky way at all or validate the integrity
 //        of the used adapter right away
+//
 export const getAvailableAdapters = (
   usedAdapters: UsedAdapter[]
 ): AvailableAdapter[] => {
@@ -130,6 +131,14 @@ export const getAvailableAdapters = (
       const adapter = fs.existsSync(usedAdapter.path)
         ? getAdapterByPath(usedAdapter.path).adapter
         : undefined
+
+      if (typeof adapter !== 'undefined' && usedAdapter.name !== adapter.name) {
+        // FIXME: this inconsistency happens whenever we change module name
+        //        manually while its used in a hacky way. We should do something
+        //        about it because its a shame
+
+        usedAdapter.name = adapter.name
+      }
 
       const availableAdapter: AvailableAdapter = {
         ...usedAdapter,

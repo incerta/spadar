@@ -1053,3 +1053,63 @@ export const validateBySchema = (
 
   return true
 }
+
+export const validateUnit = (
+  unitSchema: I.UnitSchema,
+  runtimeValue: unknown
+):
+  | true
+  | 'rangeError'
+  | 'typeError'
+  | {
+      schemaKey: string
+      errorType: 'rangeError' | 'typeError'
+    } => {
+  if (typeof unitSchema === 'string') {
+    return validateByPropSchema(unitSchema, runtimeValue)
+  }
+
+  if (typeof runtimeValue !== 'object' || runtimeValue === null) {
+    return 'typeError'
+  }
+
+  return validateBySchema(unitSchema, runtimeValue as Record<string, unknown>)
+}
+
+// TODO: on this level the error message should be more verbose
+//       for example if one of the items in the given ORDER is
+//       invalid the error receiver should know exactly the index
+//       of the failed unit
+export const validateIOUnit = (
+  ioSchema: I.IOUnitSchema,
+  runtimeValue: unknown
+):
+  | true
+  | 'rangeError'
+  | 'typeError'
+  | {
+      schemaKey: string
+      errorType: 'rangeError' | 'typeError'
+    } => {
+  if (Array.isArray(ioSchema)) {
+    if (Array.isArray(runtimeValue) === false) {
+      return 'typeError'
+    }
+
+    const [unitSchema] = ioSchema
+
+    for (const runtimeUnit of runtimeValue as Array<unknown>) {
+      const validationResult = validateUnit(unitSchema, runtimeUnit)
+
+      if (validationResult === true) {
+        continue
+      }
+
+      return validationResult
+    }
+
+    return true
+  }
+
+  return validateUnit(ioSchema, runtimeValue)
+}

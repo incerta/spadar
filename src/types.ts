@@ -325,9 +325,30 @@ export type StreamOf<T> = {
   pause?: () => void
   resume?: () => void
 
+  // TODO: consider renaming to `asyncIterable`
   /* Stream that can be processed by `for await (const token of stream)` syntax */
   stream: AsyncIterable<T>
 }
+
+/**
+ * The function on IO end of the used ADAPTER API
+ **/
+export type AdapterFunction = ((
+  keys: Record<string, string>,
+  options: Record<string, unknown>,
+  unit: unknown | unknown[]
+) => Promise<unknown>) & {
+  isSpadarSignature?: boolean
+}
+
+/**
+ * The function on IO end of the MEDIATOR API
+ **/
+export type MediatorFunction<
+  Options = Record<string, unknown>,
+  InputUnit = unknown,
+  OutputUnit = unknown
+> = (options: Options, inputUnit: InputUnit) => Promise<OutputUnit>
 
 /**
  * Result adapter module index object type
@@ -340,25 +361,18 @@ export type Adapter = {
   connectors: {
     [connectorId: string]:
       | undefined
-      | {
-          [transformation in Transformation]:
-            | undefined
-            | {
-                [inputAccessor: string]:
-                  | undefined
-                  | {
-                      [outputAccessor: string]:
-                        | undefined
-                        | (((
-                            keys: Record<string, string>,
-                            options: Record<string, unknown>,
-                            unit: unknown | unknown[]
-                          ) => Promise<unknown>) & {
-                            isSpadarSignature?: boolean
-                          })
-                    }
-              }
-        }
+      | Partial<
+          Record<
+            Transformation,
+            {
+              [inputAccessor: string]:
+                | undefined
+                | {
+                    [outputAccessor: string]: undefined | AdapterFunction
+                  }
+            }
+          >
+        >
   }
 }
 

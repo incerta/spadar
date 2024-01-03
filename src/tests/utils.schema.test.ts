@@ -2100,3 +2100,147 @@ it('validateBySchema: check `rangeError` and `typeError` cases', () => {
     )
   ).toEqual({ schemaKey: 'b', errorType: 'rangeError' })
 })
+
+it('validateUnit: payload and object unit cases', () => {
+  /* PayloadUnitSchema */
+  expect(schema.validateUnit('string', 'case')).toBe(true)
+  expect(schema.validateUnit('string', 123123)).toBe('typeError')
+  expect(schema.validateUnit('Buffer', Buffer.from('check'))).toBe(true)
+  expect(schema.validateUnit('Buffer', 'case')).toBe('typeError')
+
+  /* ObjectUnitSchema */
+  expect(
+    schema.validateUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      { unitId: 'testUnit', payload: 'payloadValue' }
+    )
+  ).toBe(true)
+  expect(
+    schema.validateUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      'case'
+    )
+  ).toBe('typeError')
+  expect(
+    schema.validateUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      { unitId: 'testUnit' }
+    )
+  ).toEqual({ errorType: 'typeError', schemaKey: 'payload' })
+})
+
+it('validateIOUnit: ORDER of PayloadUnitSchema', () => {
+  expect(schema.validateIOUnit(['string'], ['one', 'two'])).toBe(true)
+  expect(schema.validateIOUnit(['string'], ['one', 12])).toBe('typeError')
+  expect(schema.validateIOUnit(['string'], 'case')).toBe('typeError')
+})
+
+it('validateIOUnit: ORDER of ObjectUnitSchema', () => {
+  expect(
+    schema.validateIOUnit(
+      [
+        {
+          unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+          payload: 'string',
+        },
+      ],
+      [
+        {
+          unitId: 'testUnit',
+          payload: 'unit1',
+        },
+        {
+          unitId: 'testUnit',
+          payload: 'unit2',
+        },
+      ]
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateIOUnit(
+      [
+        {
+          unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+          payload: 'string',
+        },
+      ],
+      [
+        {
+          unitId: 'testUnit',
+          payload: 'unit1',
+        },
+        {
+          unitId: 'testUnit',
+        },
+      ]
+    )
+  ).toEqual({ schemaKey: 'payload', errorType: 'typeError' })
+
+  expect(
+    schema.validateIOUnit(
+      [
+        {
+          unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+          payload: 'string',
+        },
+      ],
+      {
+        unitId: 'testUnit',
+        payload: 'unit1',
+      }
+    )
+  ).toBe('typeError')
+})
+
+it('validateIOUnit: singular PayloadUnitSchema', () => {
+  expect(schema.validateIOUnit('string', 'test')).toBe(true)
+  expect(schema.validateIOUnit('string', 12)).toBe('typeError')
+})
+
+it('validateIOUnit: singular ObjectUnitSchema', () => {
+  expect(
+    schema.validateIOUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      {
+        unitId: 'testUnit',
+        payload: 'unit1',
+      }
+    )
+  ).toBe(true)
+
+  expect(
+    schema.validateIOUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      'check'
+    )
+  ).toBe('typeError')
+
+  expect(
+    schema.validateIOUnit(
+      {
+        unitId: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      },
+      {
+        unitIdERROR: { type: 'stringUnion', required: true, of: ['testUnit'] },
+        payload: 'string',
+      }
+    )
+  ).toEqual({ errorType: 'typeError', schemaKey: 'unitId' })
+})

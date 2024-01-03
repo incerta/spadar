@@ -114,7 +114,7 @@ const runCli = initCli([
 
       // FIXME: the comman should pass `options` based on parsed flags
       const streamMessageRequest =
-        mediator.textToText?.['outside-adapter']?.openai?.chatMessageArr
+        mediator.textToText?.['spadar-adapter']?.openai?.chatMessageArr
           ?.stringStream
 
       if (streamMessageRequest === undefined) {
