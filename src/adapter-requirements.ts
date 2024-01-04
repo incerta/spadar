@@ -1,6 +1,36 @@
 import dedent from 'dedent'
 import * as I from './types'
 
+/**
+ * TODO: Specifications for external usage are not yet ready.
+ *
+ * Each requirement should handle a specific feature of
+ * the adapter consumer module and therefore, must be
+ * described.
+ *
+ * The adapter connector schema must support everything
+ * that is specified in the requirement schema in order to be
+ * considered compatible.
+ **/
+type Requirement = {
+  id: string
+  description: string
+  schema: I.TransformationIOSchema
+  required?: boolean
+}
+
+/**
+ * TODO: Specification for external usage is not yet ready.
+ *
+ * A feature is something that should work if one or many
+ * adapters satisfy one or more requirement schemas.
+ **/
+type Feature = {
+  id: string
+  description: string
+  requirements: Requirement[]
+}
+
 export const chatMessageUnit: I.UnitSchema = {
   unitId: { type: 'stringUnion', of: ['chatMessage'], required: true },
   role: {
@@ -11,7 +41,7 @@ export const chatMessageUnit: I.UnitSchema = {
   payload: 'string',
 }
 
-const chatRequirements: I.Requirement[] = [
+const chatRequirements: Requirement[] = [
   {
     id: 'Multi message conversation with stream output',
     description: dedent(`
@@ -42,7 +72,7 @@ const chatRequirements: I.Requirement[] = [
   },
 ]
 
-const requirements: I.Feature[] = [
+const requirements: Feature[] = [
   {
     id: 'Spadar CLI chat',
     description:

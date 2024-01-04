@@ -7,51 +7,33 @@ type PropSchemaBase<T> = {
 
   /**
    * If the property schema has a `default` value, the result
-   * property type must be optional at MEDIATOR PUBLIC API.
-   * In the absence of a value, the MEDIATOR will use the default
-   * specified in the property schema.
+   * property type must be optional in the MEDIATOR
+   * PUBLIC API. If there's no value, the MEDIATOR will
+   * use the default from the property schema and
+   * validate the result UNIT/OPTIONS afterwards.
    **/
   default?: T
 }
 
-/**
- * @example { type: 'string' }
- *
- * result type: string
- **/
 export type StringPropSchema = PropSchemaBase<string> & {
   type: 'string'
   minLength?: number /* >= */
   maxLength?: number /* <= */
 }
 
-/**
- * @example { type: 'number' }
- *
- * result type: number
- **/
 export type NumberPropSchema = PropSchemaBase<number> & {
   type: 'number'
   min?: number /* >= */
   max?: number /* <= */
 }
 
-/**
- * @example { type: 'boolean' }
- *
- * result type: boolean
- **/
 export type BooleanPropSchema = PropSchemaBase<boolean> & {
   type: 'boolean'
 }
 
-/**
- * @example { type: 'Buffer' }
- *
- * result type: Buffer
- **/
 export type BufferPropSchema = PropSchemaBase<Buffer> & {
   type: 'Buffer'
+
   /* Buffer.length */
   minLength?: number /* >= */
   maxLength?: number /* <= */
@@ -70,6 +52,7 @@ export type BufferPropSchema = PropSchemaBase<Buffer> & {
  *
  * TODO: if `default` value is specified check if its one of
  *       the `of` members on `spadar adapter --generate` cmd
+ *       since we didn't manage to make good type for it
  **/
 export type StringUnionPropSchema = PropSchemaBase<string> & {
   type: 'stringUnion'
@@ -84,50 +67,44 @@ export type ObjectPropSchema =
   | StringUnionPropSchema
 
 export type RequiredPropSchema = 'Buffer' | 'string' | 'number' | 'boolean'
-
-// TODO: use this optional payload schema
-export type OptionalPropSchema = '?Buffer' | '?string' | '?number' | '?boolean'
-
-// TODO: Array<string> as required `StringUnionPropertySchema` */
-//       [string] as required `string` literal required `StringUnionPropertySchema`
-//       with only singular `of` memeber
-
 export type PropSchema = ObjectPropSchema | RequiredPropSchema
 
 /**
- * Object IO Unit schema: `unitId`, `payload` + meta information
+ * The payload is something that we plan
+ * to track by ADAPTER name, CONNECTOR id, and MODEL name.
+ * In other words, this property should have the greatest
+ * impact on the MODEL resources and, subsequently,
+ * on the vendor MODEL usage prices.
+ **/
+export type PayloadUnitSchema = 'string' | 'Buffer'
+
+/**
+ * Object IO unit schema includes: `unitId`, `payload`, and meta information.
  *
- * In the context of connector API the given type will be used
- * as IO literal: `[Transformation][unitId + suffixes][unitId + suffixes]`
- * for `chatMessage` value result could be:
+ * Within the context of the connector API, the specified type will be utilized
+ * as an IO literal: `[Transformation][unitId + suffixes][unitId + suffixes]`.
+ * For a `chatMessage` value, potential results could include:
  *
  *   - textToText.chatMessageStream.chatMessage
  *   - textToText.chatMessage.string
  *   - textToText.string.chatMessageArr
  *   - textToText.chatMessageArrStream.buffer
  *
- * We will generate `export type ChatMessageUnit` so `unitId` should be
- * the unique identifier of the specified schema
+ * We will generate an `export type ChatMessageUnit`, so `unitId` should be
+ * the unique identifier of the specified schema.
  *
- * The suffix will be added by the following rules:
+ * Suffixes will be added according to the following rules:
  *
- *   - `Arr`: if API expects the Array of Units
- *   - `Stream`: if API expects `StreamOf<ChatMessageUnit>`
- *   - `ArrStream`: if API expects `StreamOf<ChatMessageUnit[]>`
+ *   - `Arr`: if the API expects an Array of Units
+ *   - `Stream`: if the API expects `StreamOf<ChatMessageUnit>`
+ *   - `ArrStream`: if the API expects `StreamOf<ChatMessageUnit[]>`
  **/
 export type ObjectUnitSchema = {
-  // TODO: not sure if `unitId` property should be required
-  //       we could allow user to omit `unitId` entirely from
-  //       the MEDIATOR PUBLIC API entirely depending on `required` value
-  //
-  // TODO: describe why we should use StringUnion here but not some extra
-  //       `LiteralPropSchema` and don't narrow this type with `of: [string]`
   unitId: StringUnionPropSchema & { required: true; of: [string] }
-  payload: 'Buffer' | 'string'
+  payload: PayloadUnitSchema
   [key: string]: PropSchema
 }
 
-export type PayloadUnitSchema = 'string' | 'Buffer'
 export type UnitSchema = ObjectUnitSchema | PayloadUnitSchema
 
 type OptionalProp<T extends ObjectPropSchema, U> = T extends {
@@ -158,9 +135,6 @@ export type SchemaToType<T extends Record<string, PropSchema>> = {
     : never
 }
 
-// TODO: consider OrderSchema entity existence as representation of
-//       given list of UNITs wrapped by Object with meta information
-
 /**
  * Options schema for desired set of models
  *
@@ -188,23 +162,12 @@ export type SchemaToType<T extends Record<string, PropSchema>> = {
  *   maxTokens?: number
  * }
  *
- * TODO:
- *       `ObjectPropSchema` property values should be used to annotate
- *       result typings
- *
- * TODO:
- *       Values of `min`, `max`, `minLength`, `maxLength`,
- *       including `StreamOf<T>` streams chunks. Should be used
- *       for runtime type check handled by SPADAR
+ * TODO: `ObjectPropSchema` property values should be used to annotate ADAPTER typings
  **/
 export type ModelOptionsSchema = {
   model: StringUnionPropSchema & { required: true; of: string[] }
   [key: string]: PropSchema
 }
-
-// TODO: Consider support Array<UnitSchema | [UnitSchema]>
-//       as syntax for functional overloads generation
-//       for each given in/out pare
 
 export type Transformation =
   | 'textToText'
@@ -227,16 +190,30 @@ export type Transformation =
   | 'videoToAudio'
   | 'videoToVideo'
 
-/* Singular UNIT or ORDER of units (Array<Unit>) */
-export type IOUnitSchema = UnitSchema | [UnitSchema]
+export type OrderSchema = [UnitSchema]
+
+// TODO: consider renaming to `OrderOrUnitSchema` or something else
+export type IOUnitSchema = UnitSchema | OrderSchema
 
 /**
  * Result `ConnectorAPI` function type
  *
- * @example ['string', 'string']
+ * @example ['string', 'Buffer']
  *
  * result function type:
- *   (secrets: Secrets, options: Options, unit: string) => string
+ *   (keys: Keys, options: Options, unit: string) => string
+ *
+ * @example [
+ *   {
+ *     unitId: { type: 'stringUnion', required: true, of: ['oneShotMessage'] },
+ *     payload: 'string'
+ *   },
+ *   'string'
+ * ]
+ *
+ * result function type:
+ *   (keys: Keys, options: Options, unit: { unitId: 'oneShotMessage', payload: string }) => string
+ *
  **/
 export type IOSchema = [inputUnit: IOUnitSchema, outputUnit: IOUnitSchema]
 
@@ -253,14 +230,14 @@ export type TransferMethod =
  * {
  *   type: 'textToText',
  *   io: {
- *     staticInStaticOut: [['number', 'string']],
- *     streamInStreamOut: [['number', 'string']]
+ *     staticInStaticOut: [['string', 'string']],
+ *     streamInStreamOut: [['Buffer', 'string']]
  *   }
  * }
  *
- * Will be transformed into the API [Transformation][inUnitType][outUnitType]:
- *   - signature.textToText.number.string
- *   - signature.textToText.numberStream.stringStream
+ * Will be transformed into the API [Transformation][inputDescriptor][outputDescriptor]:
+ *   - signature.textToText.string.string
+ *   - signature.textToText.bufferStream.stringStream
  **/
 export type TransformationIOSchema = {
   type: Transformation
@@ -374,34 +351,4 @@ export type Adapter = {
           >
         >
   }
-}
-
-/**
- * TODO: specification for external usage is not yet ready
- *
- * Each requirement should handle specific feature of
- * the adapter consumer module and therefore must be
- * described.
- *
- * The adapter connector schema must support everything
- * that specified in requirement schema in order to be
- * considered as compatible
- **/
-export type Requirement = {
-  id: string
-  description: string
-  schema: TransformationIOSchema
-  required?: boolean
-}
-
-/**
- * TODO: specification for external usage is not yet ready
- *
- * Feature is something that should work if one or many
- * adapters satisfy one ore many requirement schemas
- **/
-export type Feature = {
-  id: string
-  description: string
-  requirements: Requirement[]
 }

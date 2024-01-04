@@ -12,8 +12,8 @@ type Message = {
 
 const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
 
-export const displayConverstaionContext = (messages: Message[]) => {
-  console.log('\n\nConverstaion context:')
+export const displayConversationContext = (messages: Message[]) => {
+  console.log('\n\nConversation context:')
 
   messages.forEach(({ role, content }) => {
     console.log(`\n  role: ${role}:\n\n${content}`)
@@ -92,11 +92,9 @@ export const runChat = (
       role: 'system' | 'user' | 'assistant'
       payload: string
     }>
-  ) => Promise<unknown>
+  ) => Promise<unknown>,
+  initialMessages: Message[] = []
 ) => {
-  // FIXME: move to arguments
-  const initialMessages: Message[] = []
-
   return conversation(
     {
       processAnswerRequest: async (messages) => {

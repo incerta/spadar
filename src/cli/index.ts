@@ -5,7 +5,7 @@ import { SpadarError } from '../utils/error'
 import { initCli, cmd } from '../utils/command-line'
 import { getMediator } from '../utils/mediator'
 
-import { runChat } from './chat'
+import { runChat, displayConversationContext } from './chat'
 import { runAdapter } from './adapter'
 
 /* Set terminal tab title */
@@ -105,24 +105,40 @@ const runCli = initCli([
 
   [
     ['chat'],
-    cmd({}, (_options, pipeInput) => {
-      const mediator = getMediator(config.availableAdapters)
+    cmd(
+      {
+        initialMessage: { type: 'string' },
+        i: { type: 'string' },
+      },
+      (options, pipeInput) => {
+        const pipeMessage =
+          typeof pipeInput === 'string' ? pipeInput : undefined
 
-      // FIXME: debug pipeInput message
-      const initialMessage =
-        typeof pipeInput === 'string' ? pipeInput : undefined
+        const initialMessage =
+          options.i || options.initialMessage || pipeMessage
 
-      // FIXME: the comman should pass `options` based on parsed flags
-      const streamMessageRequest =
-        mediator.textToText?.['spadar-adapter']?.openai?.chatMessageArr
-          ?.stringStream
+        const mediator = getMediator(config.availableAdapters)
 
-      if (streamMessageRequest === undefined) {
-        throw new SpadarError('Cant find required adapater function')
+        // FIXME: the cmd should pass `options` based on parsed flags
+        const streamMessageRequest =
+          mediator.textToText?.['spadar-adapter']?.openai?.chatMessageArr
+            ?.stringStream
+
+        if (streamMessageRequest === undefined) {
+          throw new SpadarError('Cant find required adapater function')
+        }
+
+        const chatMessages = initialMessage
+          ? [{ role: 'user' as const, content: initialMessage }]
+          : undefined
+
+        if (chatMessages) {
+          displayConversationContext(chatMessages)
+        }
+
+        runChat(streamMessageRequest, chatMessages)
       }
-
-      runChat(streamMessageRequest)
-    }),
+    ),
   ],
 ])
 
