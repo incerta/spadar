@@ -8,6 +8,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "downlevelIteration": true
-  }
+    "downlevelIteration": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"]
 }
