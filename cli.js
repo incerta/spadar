@@ -1,2 +1,3 @@
 #!/usr/bin/env node
-require('./dist/src/cli/index.js')
+// The file is copied to `./dist` directory on each `npm run build` command run
+require('./src/cli/index.js')

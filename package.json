@@ -2,7 +2,6 @@
   "name": "spadar",
   "version": "0.2.0",
   "description": "Software engineer AI helper",
-  "main": "src/index.ts",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
@@ -10,12 +9,12 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "prepare": "husky install",
-    "build": "tsc"
+    "build": "tsc && cp ./cli.js ./dist"
   },
   "author": "Konstantin Mazur",
   "license": "MIT",
   "bin": {
-    "spadar": "./cli.js"
+    "spadar": "./dist/cli.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
