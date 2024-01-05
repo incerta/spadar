@@ -1,6 +1,6 @@
 {
   "name": "spadar",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Software engineer AI helper",
   "scripts": {
     "prepare": "husky install",
