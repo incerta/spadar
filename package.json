@@ -13,8 +13,7 @@
     "quality-check": "npm run prettier-check && npm run lint && npm run type-check && npm run test",
     "check-n-build": "npm run quality-check && tsc && cp ./cli.js ./dist",
     "publish-patch": "npm run check-n-build && npm version patch && npm run check-n-build && npm publish",
-    "publish-minor": "npm run check-n-build && npm version minor && npm run check-n-build && npm publish",
-    "publish-major": "npm run check-n-build && npm version major && npm run check-n-build && npm publish"
+    "publish-minor": "npm run check-n-build && npm version minor && npm run check-n-build && npm publish"
   },
   "author": "Konstantin Mazur",
   "license": "MIT",
