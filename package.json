@@ -19,7 +19,7 @@
   "author": "Konstantin Mazur",
   "license": "MIT",
   "bin": {
-    "spadar": "./dist/cli.js"
+    "spadar": "dist/cli.js"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
