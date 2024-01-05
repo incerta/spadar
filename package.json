@@ -1,6 +1,6 @@
 {
   "name": "spadar",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Software engineer AI helper",
   "scripts": {
     "test": "jest",
