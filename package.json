@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "prepare": "husky install",
-    "build": "tsc && cp ./cli.js ./dist"
+    "build": "tsc && cp ./cli.js ./dist",
+    "publish-patch": "npm run build && npm version patch && npm publish",
+    "publish-minor": "npm run build && npm version minor && npm publish",
+    "publish-major": "npm run build && npm version major && npm publish"
   },
   "author": "Konstantin Mazur",
   "license": "MIT",
