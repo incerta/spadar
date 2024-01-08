@@ -107,34 +107,6 @@ export type ObjectUnitSchema = {
 
 export type UnitSchema = ObjectUnitSchema | PayloadUnitSchema
 
-type OptionalProp<T extends ObjectPropSchema, U> = T extends {
-  required: true
-}
-  ? U
-  : U | undefined
-
-export type SchemaToType<T extends Record<string, PropSchema>> = {
-  [k in keyof T]: T[k] extends StringPropSchema
-    ? OptionalProp<T[k], string>
-    : T[k] extends NumberPropSchema
-    ? OptionalProp<T[k], number>
-    : T[k] extends BooleanPropSchema
-    ? OptionalProp<T[k], boolean>
-    : T[k] extends BufferPropSchema
-    ? OptionalProp<T[k], Buffer>
-    : T[k] extends StringUnionPropSchema
-    ? OptionalProp<T[k], T[k]['of'][0]>
-    : T[k] extends 'string'
-    ? string
-    : T[k] extends 'number'
-    ? number
-    : T[k] extends 'boolean'
-    ? boolean
-    : T[k] extends 'Buffer'
-    ? Buffer
-    : never
-}
-
 /**
  * Options schema for desired set of models
  *
@@ -324,7 +296,7 @@ export type AdapterFunction = ((
 export type MediatorFunction<
   Options = Record<string, unknown>,
   InputUnit = unknown,
-  OutputUnit = unknown
+  OutputUnit = unknown,
 > = (options: Options, inputUnit: InputUnit) => Promise<OutputUnit>
 
 /**
