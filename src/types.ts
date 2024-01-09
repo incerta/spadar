@@ -324,3 +324,51 @@ export type Adapter = {
         >
   }
 }
+
+/* Utility generics */
+
+export type RequiredPropSchemaType<T extends RequiredPropSchema> =
+  T extends 'string'
+    ? string
+    : T extends 'number'
+      ? number
+      : T extends 'boolean'
+        ? boolean
+        : T extends 'Buffer'
+          ? Buffer
+          : never
+
+export type ParseObjectPropSchemaType<
+  T extends { required?: boolean; default?: unknown },
+  U,
+> = T extends { required: true }
+  ? U
+  : T extends { default: infer V }
+    ? V extends undefined
+      ? undefined | U
+      : U
+    : undefined | U
+
+export type ObjectPropSchemaType<T extends ObjectPropSchema> = T extends {
+  type: 'string'
+}
+  ? ParseObjectPropSchemaType<T, string>
+  : T extends { type: 'number' }
+    ? ParseObjectPropSchemaType<T, number>
+    : T extends { type: 'boolean' }
+      ? ParseObjectPropSchemaType<T, boolean>
+      : T extends { type: 'Buffer' }
+        ? ParseObjectPropSchemaType<T, Buffer>
+        : T extends { type: 'stringUnion' }
+          ? ParseObjectPropSchemaType<T, string>
+          : never
+
+export type PropSchemaType<T extends PropSchema> = T extends RequiredPropSchema
+  ? RequiredPropSchemaType<T>
+  : T extends ObjectPropSchema
+    ? ObjectPropSchemaType<T>
+    : never
+
+export type ObjectSchemaType<T extends Record<string, PropSchema>> = {
+  [k in keyof T]: PropSchemaType<T[k]>
+}
