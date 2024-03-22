@@ -1,3 +1,7 @@
+import fs from 'fs/promises'
+import clipboardy from 'clipboardy'
+
+import config from '../config'
 import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
@@ -34,6 +38,10 @@ const conversation = async (
     processImageRequest?: (req: unknown) => Promise<string>
   },
   chatHistory: Message[] = [],
+
+  // TODO: rename `isRecursiveCall`
+  //
+
   isRecursiveCall = false
 ): Promise<void> => {
   if (chatHistory.length === 0 || isRecursiveCall) {
@@ -43,7 +51,10 @@ const conversation = async (
 
     console.log('')
     clackPrompt.intro(conversationTitle)
-    chatHistory.push({ role: 'user', content: await getPromptFromYou() })
+
+    const initialPrompt = await getPromptFromYou()
+
+    chatHistory.push({ role: 'user', content: initialPrompt })
   }
 
   const spin = clackPrompt.spinner()
@@ -54,30 +65,59 @@ const conversation = async (
 
   spin.stop(`${cliColor.green('AI:')}`)
 
-  /* TODO: unfortunately method below is not working in the current context
-   we want to `cancel` the stream on "s" key press, the `cancel` method
-   can be destructured from `await ai.processAnswerRequest(chatHistory)` statement
-   
-  ```
-    readline.emitKeypressEvents(process.stdin)
-    process.stdin.setRawMode(true)
-    process.stdin.on('keypress', (_, key) => {
-      if (key.sequence === 's') {
-        cancel()
-      }
-    })
-  ```
-  */
-
   console.log('')
+
+  // writing stream to STDOUT
   const responseMessage = await requestAnswerStream(
     process.stdout.write.bind(process.stdout)
   )
+
   console.log('\n')
 
   chatHistory.push({ role: 'assistant', content: responseMessage })
 
-  const userPrompt = await getPromptFromYou()
+  // starting new cycle
+  //
+
+  const cleanInterceptor = async (prompt: string): Promise<string> => {
+    //  for operation on the last message
+    //
+
+    if (prompt === 'copy' || prompt === 'c') {
+      clipboardy.writeSync(responseMessage)
+      return getPromptFromYou().then(cleanInterceptor)
+    }
+
+    if (prompt === 'save') {
+      const timestamp = Date.now()
+      const fileName = `${timestamp}.json`
+      const dir = config.resources.chatsDir
+
+      await fs.mkdir(dir, { recursive: true })
+
+      const file = dir + '/' + fileName
+      const data = JSON.stringify(chatHistory)
+
+      await fs.writeFile(file, data)
+
+      console.log(`\nsaved to:\n${file}\n`)
+
+      return getPromptFromYou().then(cleanInterceptor)
+    }
+
+    // TODO: summarize and save
+
+    return prompt
+  }
+
+  const userPrompt = await getPromptFromYou().then(cleanInterceptor)
+
+  // dirty interception might do changes over history
+  //
+
+  if (userPrompt === 'start over') {
+    return conversation(ai, [])
+  }
 
   chatHistory.push({ role: 'user', content: userPrompt })
 
@@ -95,6 +135,9 @@ export const runChat = (
   ) => Promise<unknown>,
   initialMessages: Message[] = []
 ) => {
+  // too fat
+  //
+
   return conversation(
     {
       processAnswerRequest: async (messages) => {

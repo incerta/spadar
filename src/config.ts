@@ -22,11 +22,18 @@ const resourcesDirectory = ((): string => {
 const usedAdapters = getUsedAdapters(resourcesDirectory)
 const availableAdapters = getAvailableAdapters(usedAdapters)
 
+// TODO: don't resolve paths like this please
+//       you might need to use windows some day.
+//
+//       God forbid
+//
+
 export default {
   version,
 
   resources: {
     rootDir: resourcesDirectory,
+    chatsDir: resourcesDirectory + '/chats',
     usedAdaptersFilePath: resourcesDirectory + '/used-adapters.json',
   },
 
