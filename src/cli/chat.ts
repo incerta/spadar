@@ -5,18 +5,29 @@ import config from '../config'
 import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
+import { requirementsExpert } from './experts/requirements'
 import { getUserPrompt } from '../utils/interactive-cli'
 
-import * as I from '../types'
+import type * as I from '../types'
 
-type Message = {
-  role: 'system' | 'assistant' | 'user'
-  content: string
+type AI = {
+  // TODO: rename to `runComplition`
+  processAnswerRequest: (chatHistory: I.Message[]) => Promise<{
+    // TODO: rename to `stream`
+    requestAnswerStream: (
+      onStreamChunkReceived: (data: string) => void
+    ) => Promise<string>
+
+    cancel: () => void
+  }>
+
+  // TODO: unused API, revise after CHAT-PLUGIN discussion ends
+  processImageRequest?: (req: unknown) => Promise<string>
 }
 
 const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
 
-export const displayConversationContext = (messages: Message[]) => {
+export const displayConversationContext = (messages: I.Message[]) => {
   console.log('\n\nConversation context:')
 
   messages.forEach(({ role, content }) => {
@@ -27,32 +38,42 @@ export const displayConversationContext = (messages: Message[]) => {
 }
 
 const conversation = async (
-  ai: {
-    processAnswerRequest: (chatHistory: Message[]) => Promise<{
-      requestAnswerStream: (
-        onStreamChunkReceived: (data: string) => void
-      ) => Promise<string>
-      cancel: () => void
-    }>
-    // TODO: unused API, revise after CHAT-PLUGIN discussion ends
-    processImageRequest?: (req: unknown) => Promise<string>
-  },
-  chatHistory: Message[] = [],
-
-  // TODO: rename `isRecursiveCall`
-  //
-
-  isRecursiveCall = false
+  ai: AI,
+  chatHistory: I.Message[] = [],
+  expert?: string
 ): Promise<void> => {
-  if (chatHistory.length === 0 || isRecursiveCall) {
-    const conversationTitle = isRecursiveCall
-      ? 'Conversation continued'
-      : 'Starting new conversation'
+  if (
+    chatHistory.length === 0 ||
+    chatHistory[chatHistory.length - 1].role === 'assistant'
+  ) {
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        process.stdout.write('\x1Bc')
+        resolve(undefined)
+      }, 0)
+    })
+
+    let conversationTitle = 'Starting new conversation'
+
+    if (chatHistory.length) {
+      conversationTitle = 'Continue conversation'
+    }
+
+    if (expert) {
+      conversationTitle = expert
+    }
 
     console.log('')
     clackPrompt.intro(conversationTitle)
 
     const initialPrompt = await getPromptFromYou()
+
+    const interceptor = await interceptors(ai, initialPrompt, chatHistory)
+
+    if (interceptor !== null) {
+      interceptor()
+      return
+    }
 
     chatHistory.push({ role: 'user', content: initialPrompt })
   }
@@ -96,11 +117,12 @@ const conversation = async (
       await fs.mkdir(dir, { recursive: true })
 
       const file = dir + '/' + fileName
-      const data = JSON.stringify(chatHistory)
+      const data = JSON.stringify(chatHistory, null, 2)
 
       await fs.writeFile(file, data)
 
-      console.log(`\nsaved to:\n${file}\n`)
+      console.log(`\nsaved to (path copied to clipboard):\n${file}\n`)
+      clipboardy.writeSync(file)
 
       return getPromptFromYou().then(cleanInterceptor)
     }
@@ -112,11 +134,11 @@ const conversation = async (
 
   const userPrompt = await getPromptFromYou().then(cleanInterceptor)
 
-  // dirty interception might do changes over history
-  //
+  const interceptor = await interceptors(ai, userPrompt, chatHistory)
 
-  if (userPrompt === 'start over') {
-    return conversation(ai, [])
+  if (interceptor !== null) {
+    interceptor()
+    return
   }
 
   chatHistory.push({ role: 'user', content: userPrompt })
@@ -133,7 +155,7 @@ export const runChat = (
       payload: string
     }>
   ) => Promise<unknown>,
-  initialMessages: Message[] = []
+  initialMessages: I.Message[] = []
 ) => {
   // too fat
   //
@@ -173,4 +195,43 @@ export const runChat = (
     },
     initialMessages
   )
+}
+
+/**
+ * Intercept normal flow of the conversation
+ **/
+export async function interceptors(
+  ai: AI,
+  userPrompt: string,
+  chatHistory: I.Message[]
+): Promise<null | (() => unknown)> {
+  if (userPrompt === 'start over') {
+    return () => conversation(ai, [])
+  }
+
+  if (userPrompt === 'load') {
+    const content = await clipboardy.read()
+
+    if (typeof content === 'string' && content.trim() !== '') {
+      return () => {
+        conversation(ai, [...chatHistory, { role: 'user', content }])
+      }
+    }
+  }
+
+  if (/^load conversation: /.test(userPrompt)) {
+    const filePath = userPrompt.split('load conversation: ')[1]
+    const raw = await fs.readFile(filePath, 'utf8')
+    const data = JSON.parse(raw)
+
+    return () => displayConversationContext(data)
+  }
+
+  if (userPrompt === 'requirements expert') {
+    const expert = 'Starting converstaion with requirements expert'
+
+    return () => conversation(ai, requirementsExpert, expert)
+  }
+
+  return null
 }

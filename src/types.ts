@@ -1,3 +1,8 @@
+export type Message = {
+  role: 'system' | 'assistant' | 'user'
+  content: string
+}
+
 /**
  * Each `ObjectPropSchema` extends `PropSchemaBase<T>`
  **/
