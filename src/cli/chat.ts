@@ -6,6 +6,11 @@ import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
 import { requirementsExpert } from './experts/requirements'
+import { generatorExpert } from './experts/generator'
+import { jsCommentator } from './experts/js-comentator'
+import { commitMessenger } from './experts/commit-messenger'
+import { grammarExpert } from './experts/grammar'
+
 import { getUserPrompt } from '../utils/interactive-cli'
 
 import type * as I from '../types'
@@ -104,7 +109,7 @@ const conversation = async (
     //  for operation on the last message
     //
 
-    if (prompt === 'copy' || prompt === 'c') {
+    if (prompt === 'copy' || prompt === 'cp' || prompt === 'c') {
       clipboardy.writeSync(responseMessage)
       return getPromptFromYou().then(cleanInterceptor)
     }
@@ -205,11 +210,11 @@ export async function interceptors(
   userPrompt: string,
   chatHistory: I.Message[]
 ): Promise<null | (() => unknown)> {
-  if (userPrompt === 'start over') {
+  if (userPrompt === 'start over' || userPrompt === 'clear') {
     return () => conversation(ai, [])
   }
 
-  if (userPrompt === 'load') {
+  if (userPrompt === 'load' || userPrompt === 'p') {
     const content = await clipboardy.read()
 
     if (typeof content === 'string' && content.trim() !== '') {
@@ -227,10 +232,36 @@ export async function interceptors(
     return () => displayConversationContext(data)
   }
 
+  // TODO: experts generation and usage must not be hardcoded eventually
+
   if (userPrompt === 'requirements expert') {
-    const expert = 'Starting converstaion with requirements expert'
+    const expert = 'Requirements expert'
 
     return () => conversation(ai, requirementsExpert, expert)
+  }
+
+  if (userPrompt === 'generator expert') {
+    const expert = 'Generator expert'
+
+    return () => conversation(ai, generatorExpert, expert)
+  }
+
+  if (userPrompt === 'js-commentator expert' || userPrompt === 'jsc') {
+    const expert = 'Js-commentor expert'
+
+    return () => conversation(ai, jsCommentator, expert)
+  }
+
+  if (userPrompt === 'commit') {
+    const expert = 'Commit-messenger expert'
+
+    return () => conversation(ai, commitMessenger, expert)
+  }
+
+  if (userPrompt === 'grammar expert' || userPrompt === 'ge') {
+    const expert = 'Grammar expert'
+
+    return () => conversation(ai, grammarExpert, expert)
   }
 
   return null
