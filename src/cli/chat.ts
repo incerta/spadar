@@ -58,7 +58,7 @@ const conversation = async (
       }, 0)
     })
 
-    let conversationTitle = 'Starting new conversation'
+    let conversationTitle = '( .) _ ( .)'
 
     if (chatHistory.length) {
       conversationTitle = 'Continue conversation'
