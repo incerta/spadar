@@ -15,6 +15,13 @@ import { getUserPrompt } from '../utils/interactive-cli'
 
 import type * as I from '../types'
 
+const SIGNATURE = {
+  title: '( .) _ ( .)',
+  loading: '...',
+  you: cliColor.cyan('→'),
+  ai: `${cliColor.green('←')}`,
+}
+
 type AI = {
   // TODO: rename to `runComplition`
   processAnswerRequest: (chatHistory: I.Message[]) => Promise<{
@@ -30,7 +37,7 @@ type AI = {
   processImageRequest?: (req: unknown) => Promise<string>
 }
 
-const getPromptFromYou = () => getUserPrompt(`${cliColor.cyan('You:')}`)
+const getPromptFromYou = () => getUserPrompt(SIGNATURE.you)
 
 export const displayConversationContext = (messages: I.Message[]) => {
   console.log('\n\nConversation context:')
@@ -58,7 +65,7 @@ const conversation = async (
       }, 0)
     })
 
-    let conversationTitle = '( .) _ ( .)'
+    let conversationTitle = SIGNATURE.title
 
     if (chatHistory.length) {
       conversationTitle = 'Continue conversation'
@@ -85,11 +92,11 @@ const conversation = async (
 
   const spin = clackPrompt.spinner()
 
-  spin.start('THINKING...')
+  spin.start(SIGNATURE.loading)
 
   const { requestAnswerStream } = await ai.processAnswerRequest(chatHistory)
 
-  spin.stop(`${cliColor.green('AI:')}`)
+  spin.stop(SIGNATURE.ai)
 
   console.log('')
 
