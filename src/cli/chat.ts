@@ -5,11 +5,7 @@ import config from '../config'
 import * as clackPrompt from '@clack/prompts'
 import * as cliColor from 'kolorist'
 
-import { requirementsExpert } from './experts/requirements'
-import { generatorExpert } from './experts/generator'
-import { jsCommentator } from './experts/js-comentator'
-import { commitMessenger } from './experts/commit-messenger'
-import { grammarExpert } from './experts/grammar'
+import { EXPERTS_LIST, EXPERTS_BY_COMMAND } from './experts'
 
 import { getUserPrompt } from '../utils/interactive-cli'
 
@@ -49,10 +45,13 @@ export const displayConversationContext = (messages: I.Message[]) => {
   console.log('\n')
 }
 
+const clear = () => process.stdout.write('\x1Bc')
+
 const conversation = async (
   ai: AI,
   chatHistory: I.Message[] = [],
-  expert?: string
+  title?: string,
+  skipClear?: boolean
 ): Promise<void> => {
   if (
     chatHistory.length === 0 ||
@@ -60,7 +59,10 @@ const conversation = async (
   ) {
     await new Promise((resolve) => {
       setTimeout(() => {
-        process.stdout.write('\x1Bc')
+        if (skipClear !== true) {
+          clear()
+        }
+
         resolve(undefined)
       }, 0)
     })
@@ -71,8 +73,8 @@ const conversation = async (
       conversationTitle = 'Continue conversation'
     }
 
-    if (expert) {
-      conversationTitle = expert
+    if (title) {
+      conversationTitle = title
     }
 
     console.log('')
@@ -211,6 +213,9 @@ export const runChat = (
 
 /**
  * Intercept normal flow of the conversation
+ *
+ * TODO: implement "help" command which will display
+ *       currently available chat commands
  **/
 export async function interceptors(
   ai: AI,
@@ -239,36 +244,29 @@ export async function interceptors(
     return () => displayConversationContext(data)
   }
 
-  // TODO: experts generation and usage must not be hardcoded eventually
+  if (userPrompt === 'list experts' || userPrompt === 'le') {
+    console.log(EXPERTS_LIST)
+    chatHistory.pop()
 
-  if (userPrompt === 'requirements expert') {
-    const expert = 'Requirements expert'
-
-    return () => conversation(ai, requirementsExpert, expert)
+    return () => {
+      conversation(ai, chatHistory, undefined, true)
+    }
   }
 
-  if (userPrompt === 'generator expert') {
-    const expert = 'Generator expert'
+  // TODO: expert command might have a collision with the built-in commands
+  //       we need to figure out the way hot to resolve this
+  //
+  const experts = EXPERTS_BY_COMMAND[userPrompt]
 
-    return () => conversation(ai, generatorExpert, expert)
-  }
+  if (experts) {
+    if (experts.length > 1) {
+      // TODO: implement clack select prompt by the matched expert name
+      //
+    }
 
-  if (userPrompt === 'js-commentator expert' || userPrompt === 'jsc') {
-    const expert = 'Js-commentor expert'
+    const [expert] = experts
 
-    return () => conversation(ai, jsCommentator, expert)
-  }
-
-  if (userPrompt === 'commit') {
-    const expert = 'Commit-messenger expert'
-
-    return () => conversation(ai, commitMessenger, expert)
-  }
-
-  if (userPrompt === 'grammar expert' || userPrompt === 'ge') {
-    const expert = 'Grammar expert'
-
-    return () => conversation(ai, grammarExpert, expert)
+    return () => conversation(ai, expert.prompt, expert.name)
   }
 
   return null

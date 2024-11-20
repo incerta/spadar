@@ -377,3 +377,20 @@ export type PropSchemaType<T extends PropSchema> = T extends RequiredPropSchema
 export type ObjectSchemaType<T extends Record<string, PropSchema>> = {
   [k in keyof T]: PropSchemaType<T[k]>
 }
+
+export type Expert = {
+  /**
+   * What is displayed at the very top instead of default: `( .) _ ( .)`
+   **/
+  name: string
+
+  /**
+   * Prompt engineering
+   **/
+  prompt: Message[]
+
+  /**
+   * What user needs to type in CLI-CHAT in order to switch to the expert
+   **/
+  commands: [string, ...Array<string>]
+}
