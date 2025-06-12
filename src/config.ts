@@ -1,8 +1,11 @@
+import { readJsonFiles } from './utils/json'
 import { version } from '../package.json'
 import { toKebabCase } from './utils/string'
 import { getUsedAdapters, getAvailableAdapters } from './utils/adapter'
 import { SpadarError } from './utils/error'
 import { resolvePath } from './utils/path'
+
+import type { Expert } from './types'
 
 const resourcesDirectory = ((): string => {
   const { SPADAR_RESOURCES_DIR } = process.env
@@ -15,7 +18,7 @@ const resourcesDirectory = ((): string => {
 
   throw new SpadarError(`
     The SPADAR_RESOURCES_DIR env variable is not specified.
-    Please add it to your shell config manually. 
+    Please add it to your shell config manually.
   `)
 })()
 
@@ -28,6 +31,10 @@ const availableAdapters = getAvailableAdapters(usedAdapters)
 //       God forbid
 //
 
+const experts = readJsonFiles<Expert>(
+  resolvePath(resourcesDirectory + '/experts')
+)
+
 export default {
   version,
 
@@ -39,6 +46,7 @@ export default {
 
   usedAdapters,
   availableAdapters,
+  experts,
 
   /* All paths are relative to the root of ADAPTER module source */
   adapter: {

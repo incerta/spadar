@@ -244,7 +244,7 @@ export async function interceptors(
     return () => displayConversationContext(data)
   }
 
-  if (userPrompt === 'list experts' || userPrompt === 'le') {
+  if (userPrompt === 'experts' || userPrompt === 'le') {
     console.log(EXPERTS_LIST)
     chatHistory.pop()
 

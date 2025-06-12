@@ -390,7 +390,7 @@ export type Expert = {
   prompt: Message[]
 
   /**
-   * What user needs to type in CLI-CHAT in order to switch to the expert
+   * Invoke expert by the following messages in CLI-CHAT
    **/
   commands: [string, ...Array<string>]
 }
