@@ -9,7 +9,7 @@ Software engineer AI helper — a CLI tool that orchestrates AI adapter modules 
 - **Adapter Module** — a plugin that implements one or more connectors to a specific AI vendor. Generated and managed via `spadar generate` and `spadar adapter` commands.
 - **Connector** — a unit within an adapter that defines supported transformations, IO schemas, model options, and required API keys.
 - **Mediator** — runtime layer that resolves available adapters and exposes a normalized API surface.
-- **Expert** — a named prompt preset (stored as JSON in `~/.spadar/experts`) that can be invoked during chat sessions.
+- **Expert** — a named prompt preset that can be invoked during chat sessions, either built in or loaded as JSON from `~/.spadar/experts/${UniqueExpertName}.json`.
 
 ## Installation
 
@@ -54,10 +54,24 @@ spadar --version                    # Print version
 ### Chat
 
 ```sh
-spadar chat                         # Start interactive chat
-spadar chat --initialMessage "Hi"   # Start chat with initial message
-echo "Hi" | spadar chat             # Pipe input into chat
+spadar chat --help
+spadar chat --adapter $NAME --connector $NAME               # Select adapter/connector to chat with
+echo "Hi" | spadar chat --adapter $NAME --connector $NAME   # Pipe input into chat
 ```
+
+Omit `--adapter` or `--connector` to see the list of available options.
+
+During a chat session, the following commands are recognized instead of being sent as a message:
+
+| Command                    | Description                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `experts`, `le`            | List available experts (hardcoded ones plus any loaded from `~/.spadar/experts`) |
+| `<expert command>`         | Switch the conversation to that expert's persona                                 |
+| `start over`, `clear`      | Reset the conversation                                                           |
+| `load`, `p`                | Paste clipboard content as your next message                                     |
+| `load conversation: $PATH` | Load a previously saved conversation from disk                                   |
+| `copy`, `cp`, `c`          | Copy the AI's last response to the clipboard                                     |
+| `save`                     | Save the conversation to `$SPADAR_RESOURCES_DIR/chats`                           |
 
 ### Adapter Management
 

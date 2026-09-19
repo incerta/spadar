@@ -98,3 +98,12 @@ Usage: spadar adapter [flag]
 
   Remove adapter of the following name from the "$SPADAR_RESOURCES_DIR/used-adapters.json"
 `
+
+export const CHAT_CMD_HELP = `
+Usage: spadar chat [flag]
+
+  -h, --help                  Outputs usage information.
+
+  --adapter $NAME             Specify connected adapter name, if empty shows list of available adapters
+  --connector $NAME           Specify connected adapter connector, if empty shows list of available connectors
+`

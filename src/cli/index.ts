@@ -3,10 +3,10 @@ import {
   INDEX_CMD_HELP,
   GENERATE_CMD_HELP,
   ADAPTER_CMD_HELP,
+  CHAT_CMD_HELP,
 } from '../constants'
 import config from '../config'
 
-import { SpadarError } from '../utils/error'
 import { initCli, cmd } from '../utils/command-line'
 import { getMediator } from '../utils/mediator'
 
@@ -133,10 +133,19 @@ const runCli = initCli([
     ['chat'],
     cmd(
       {
+        h: { type: 'boolean' },
+        help: { type: 'boolean' },
+        adapter: { type: 'string' },
+        connector: { type: 'string' },
         initialMessage: { type: 'string' },
         i: { type: 'string' },
       },
       (options, pipeInput) => {
+        if (options.h || options.help) {
+          console.log(CHAT_CMD_HELP)
+          return
+        }
+
         const pipeMessage =
           typeof pipeInput === 'string' ? pipeInput : undefined
 
@@ -144,14 +153,53 @@ const runCli = initCli([
           options.i || options.initialMessage || pipeMessage
 
         const mediator = getMediator(config.availableAdapters)
+        const adapterByName = mediator.textToText
 
-        // FIXME: the cmd should pass `options` based on parsed flags
-        const streamMessageRequest =
-          mediator.textToText?.['spadar-adapter']?.openai?.chatMessageArr
-            ?.stringStream
+        if (adapterByName === undefined) {
+          console.log(
+            `Chat requires connected adapter with "textToText" signature, none has been found`
+          )
+          return
+        }
+
+        const unitsByConnector = adapterByName[options.adapter ?? '']
+
+        if (unitsByConnector === undefined) {
+          const adapters = Object.keys(adapterByName)
+          console.log(
+            `Specified --adapter "${options.adapter}" is not found among "textToText" signature`
+          )
+          console.log(`Available adapters: ${adapters.join(', ')}`)
+          return
+        }
+
+        const unitByType = unitsByConnector[options.connector ?? '']
+
+        if (unitByType === undefined) {
+          const availableModels = Object.keys(unitsByConnector)
+          console.log(
+            `Specified --adapter "${options.adapter}" --connector "${options.connector}" is not found`
+          )
+          console.log(`Available connectors: ${availableModels.join(', ')}`)
+          return
+        }
+
+        const chatMeassageArrSignature = unitByType.chatMessageArr
+
+        if (chatMeassageArrSignature === undefined) {
+          console.log(
+            `Specified --adapter ${options.adapter} missing "textToText.chatMessageArr" signature`
+          )
+          return
+        }
+
+        const streamMessageRequest = chatMeassageArrSignature.stringStream
 
         if (streamMessageRequest === undefined) {
-          throw new SpadarError('Cant find required adapater function')
+          console.log(
+            `Specified --adapter ${options.adapter} missing "textToText.chatMessageArr.stringStream" signature`
+          )
+          return
         }
 
         const chatMessages = initialMessage
