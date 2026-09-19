@@ -118,12 +118,12 @@ const conversation = async (
     //  for operation on the last message
     //
 
-    if (prompt === 'copy' || prompt === 'cp' || prompt === 'c') {
+    if (prompt === '/copy' || prompt === '/cp' || prompt === '/c') {
       clipboardy.writeSync(responseMessage)
       return getPromptFromYou().then(cleanInterceptor)
     }
 
-    if (prompt === 'save') {
+    if (prompt === '/save') {
       const timestamp = Date.now()
       const fileName = `${timestamp}.json`
       const dir = config.resources.chatsDir
@@ -222,11 +222,11 @@ export async function interceptors(
   userPrompt: string,
   chatHistory: I.Message[]
 ): Promise<null | (() => unknown)> {
-  if (userPrompt === 'start over' || userPrompt === 'clear') {
+  if (userPrompt === '/clear') {
     return () => conversation(ai, [])
   }
 
-  if (userPrompt === 'load' || userPrompt === 'p') {
+  if (userPrompt === '/load' || userPrompt === '/p') {
     const content = await clipboardy.read()
 
     if (typeof content === 'string' && content.trim() !== '') {
@@ -244,7 +244,7 @@ export async function interceptors(
     return () => displayConversationContext(data)
   }
 
-  if (userPrompt === 'experts' || userPrompt === 'le') {
+  if (userPrompt === '/experts' || userPrompt === '/le') {
     console.log(EXPERTS_LIST)
     chatHistory.pop()
 
